@@ -1,11 +1,13 @@
 pipeline {
     agent any
+
     environment {
         REMOTE_HOST = '158.101.215.71'
         REMOTE_USER = 'jenkins-deploy'
         DEPLOY_PATH = '/home/jenkins-deploy/IIS'
         SSH_CREDENTIALS_ID = '228'
     }
+    
     stages {
         stage('Checkout') {
             steps {

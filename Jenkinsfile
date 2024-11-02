@@ -19,7 +19,7 @@ pipeline {
                     script {
                         try {
                             sleep 10
-                            sh 'tar --exclude=".git" --exclude="*.tmp" --warning=no-file-changed -czf package.tar.gz .'
+                            sh 'tar --verbose --warning=no-file-changed -czf package.tar.gz .'
                         } catch (e) {
                             error("Packaging failed.")
                         }

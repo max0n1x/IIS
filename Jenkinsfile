@@ -31,6 +31,7 @@ pipeline {
             steps {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     script {
+                        sh "uname -a"
                         sh "scp package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
 
                         sh """

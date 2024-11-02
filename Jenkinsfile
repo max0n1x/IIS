@@ -18,7 +18,7 @@ pipeline {
                 dir('.') {
                     script {
                         try {
-                            sh 'tar -czf package.tar.gz .'
+                            sh 'tar --warning=no-file-changed -czf package.tar.gz .'
                         } catch (e) {
                             error("Build or packaging failed.")
                         }

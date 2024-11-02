@@ -6,7 +6,7 @@ Garage sale web application.
 
 ### Docker
 
-#### Backen
+#### Backend
 
 ```bash
 cd backend

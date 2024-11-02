@@ -68,6 +68,7 @@ pipeline {
             //     body: "Deployment was successful. Check details here: ${env.BUILD_URL}",
             //     recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             // )
+            echo "Deployment was successful."
         }
         failure {
             // emailext (
@@ -75,6 +76,7 @@ pipeline {
             //     body: "Deployment failed. Check details here: ${env.BUILD_URL}",
             //     recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             // )
+            echo "Deployment failed."
         }
     }
 }

@@ -13,14 +13,16 @@ pipeline {
             }
         }
 
-        stage('Build and Package') {
+        stage('Package') {
             steps {
                 dir('.') {
                     script {
                         try {
+                            // wait 10 seconds
+                            sleep 10
                             sh 'tar --warning=no-file-changed -czf package.tar.gz .'
                         } catch (e) {
-                            error("Build or packaging failed.")
+                            error("Packaging failed.")
                         }
                     }
                 }

@@ -32,10 +32,10 @@ pipeline {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     script {
                         sh "uname -a"
-                        sh "scp package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
+                        sh "scp -o StrictHostKeyChecking=no package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
 
                         sh """
-                        ssh ${REMOTE_USER}@${REMOTE_HOST} << EOF
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << EOF
                             cd ${DEPLOY_PATH}
                             tar -xzf package.tar.gz
                             docker-compose up --build -d

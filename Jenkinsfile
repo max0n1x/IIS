@@ -19,7 +19,7 @@ pipeline {
                     script {
                         try {
                             sleep 10
-                            sh 'tar --verbose --exclude=".git" -czf package.tar.gz .'
+                            sh 'tar --verbose --exclude=".git" --exclude="package.tar.gz" -czf package.tar.gz .'
                         } catch (e) {
                             error("Packaging failed.")
                         }

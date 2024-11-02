@@ -18,7 +18,6 @@ pipeline {
                 dir('.') {
                     script {
                         try {
-                            sleep 10
                             sh 'tar --exclude=".git" --exclude="package.tar.gz" -czf package.tar.gz .'
                         } catch (e) {
                             error("Packaging failed.")

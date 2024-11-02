@@ -1,0 +1,7 @@
+fastapi 
+uvicorn 
+cryptography 
+python-multipart 
+requests
+prometheus-fastapi-instrumentator
+python-logging-loki

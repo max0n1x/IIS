@@ -1,0 +1,9 @@
+.idea
+tests
+src/**/__pycache__/
+README.md
+.gitignore
+.git
+.dockerignore
+Dockerfile
+.DS_Store

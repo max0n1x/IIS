@@ -18,15 +18,21 @@ import '../GlobalStyles.css';
 
 const ItemsList: React.FC = () => {
 
-    const headerRef = useRef(null);
-    const logInRef = useRef(null);
-    const loggedIn = useRef(null);
+    const headerRef = useRef<HTMLDivElement>(null);
+    const logInRef = useRef<HTMLAnchorElement>(null);
+    const loggedIn = useRef<HTMLAnchorElement>(null);
     
-    const itemsContainerRef = useRef(null);
-    const captionRef = useRef(null);
-    const contactsRef = useRef(null);
+    const itemsContainerRef = useRef<HTMLDivElement>(null);
+    const captionRef = useRef<HTMLDivElement>(null);
+    const contactsRef = useRef<HTMLDivElement>(null);
 
-    const [items, setItems] = useState([]);
+    interface Item {
+        id: number;
+        image_path: string;
+        name: string;
+        price: number;
+    }
+    const [items, setItems] = useState<Item[]>([]);
 
     const location = useLocation();
 
@@ -53,7 +59,7 @@ const ItemsList: React.FC = () => {
         if(data.length <= 4 && contactsRef.current) {
             contactsRef.current.style.position = "absolute";
             contactsRef.current.style.bottom = "0";
-        } else {
+        } else if(contactsRef.current) {
             contactsRef.current.style.position = "relative";
         }
 
@@ -76,14 +82,18 @@ const ItemsList: React.FC = () => {
         const queryParams = new URLSearchParams(location.search);
         const categoryId = queryParams.get('categoryId');
 
-        if(categoryId.includes("women")){
-            headerRef.current.childNodes[3].style.borderBottom = "2px solid var(--blue)";
+        if(categoryId === null){
+            return;
+        }
+
+        if(categoryId.includes("women") && headerRef.current && captionRef.current){
+            (headerRef.current.childNodes[3] as HTMLElement).style.borderBottom = "2px solid var(--blue)";
             captionRef.current.textContent = categoryId.replace("women", "")
-        } else if (categoryId.includes("men")){
-            headerRef.current.childNodes[2].style.borderBottom = "2px solid var(--blue)";
+        } else if (categoryId.includes("men") && headerRef.current && captionRef.current){
+            (headerRef.current.childNodes[2] as HTMLElement).style.borderBottom = "2px solid var(--blue)";
             captionRef.current.textContent = categoryId.replace("men", "")
-        } else if (categoryId.includes("kids")){
-            headerRef.current.childNodes[4].style.borderBottom = "2px solid var(--blue)";
+        } else if (categoryId.includes("kids") && headerRef.current && captionRef.current){
+            (headerRef.current.childNodes[4] as HTMLElement).style.borderBottom = "2px solid var(--blue)";
             captionRef.current.textContent = categoryId.replace("kids", "")
         }
 

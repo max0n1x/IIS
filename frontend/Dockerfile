@@ -13,7 +13,7 @@ WORKDIR /app
 COPY . .
 EXPOSE 3000
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 RUN npm run build
 RUN npm install -g serve
 

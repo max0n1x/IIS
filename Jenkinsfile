@@ -36,7 +36,9 @@ pipeline {
                         sh """
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << EOF
                             cd ${DEPLOY_PATH}
+                            ls | grep -v 'package.tar.gz' | xargs rm -rf
                             tar -xzf package.tar.gz
+                            rm package.tar.gz
                             docker-compose up --build -d
                         EOF
                         """

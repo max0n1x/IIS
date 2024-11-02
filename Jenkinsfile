@@ -1,44 +1,60 @@
 pipeline {
     agent any
+    environment {
+        REMOTE_HOST = '158.101.215.71'
+        REMOTE_USER = 'jenkins-deploy'
+        DEPLOY_PATH = '/home/jenkins-deploy/IIS'
+        SSH_CREDENTIALS_ID = '228'
+    }
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        stage('Build and Deploy Frontend') {
+
+        stage('Build and Package') {
             steps {
-                dir('frontend') {
+                dir('.') {
                     script {
                         try {
-                            sh 'docker build --pull --rm -f "Dockerfile" -t frontend:latest .'
+                            sh 'tar -czf package.tar.gz .'
                         } catch (e) {
-                            echo 'Build failed, aborting deployment'
-                            errors = true
-                            emailext (
-                                subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",
-                                body: "Something is wrong with ${env.BUILD_URL} in stage ${env.STAGE_NAME}",
-                                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-                            )
+                            error("Build or packaging failed.")
                         }
                     }
                 }
             }
         }
-        stage('Build and Deploy Backend') {
+
+        stage('Deploy to Remote Host') {
             steps {
-                dir('backend') {
+                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     script {
-                        try {
-                            sh 'docker build --pull --rm -f "Dockerfile" -t backend:latest .'
-                        } catch (e) {
-                            echo 'Build failed, aborting deployment'
-                            errors = true
-                            emailext (
-                                subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",
-                                body: "Something is wrong with ${env.BUILD_URL} in stage ${env.STAGE_NAME}",
-                                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-                            )
+                        sh "scp package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
+
+                        sh """
+                        ssh ${REMOTE_USER}@${REMOTE_HOST} << EOF
+                            cd ${DEPLOY_PATH}
+                            tar -xzf package.tar.gz
+                            docker-compose up --build -d
+                        EOF
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+                    script {
+                        def check = sh(
+                            script: "ssh ${REMOTE_USER}@${REMOTE_HOST} 'docker ps -q -f name=my_container_name'",
+                            returnStatus: true
+                        )
+                        if (check != 0) {
+                            error("Deployment verification failed. Container is not running.")
                         }
                     }
                 }
@@ -47,27 +63,18 @@ pipeline {
     }
     post {
         success {
-
-            sh 'docker run --rm -d -p 8080:8080/tcp backend:latest'
-            sh 'docker run --rm -d -p 3000:3000/tcp frontend:latest'
-
-            emailext (
-                subject: "Build success in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Everything is fine with ${env.BUILD_URL}",
-                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-            )
-
+            // emailext (
+            //     subject: "Build success in Jenkins: ${currentBuild.fullDisplayName}",
+            //     body: "Deployment was successful. Check details here: ${env.BUILD_URL}",
+            //     recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+            // )
         }
-
         failure {
-
-            emailext (
-                subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Something is wrong with ${env.BUILD_URL}",
-                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-            )
-
+            // emailext (
+            //     subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",
+            //     body: "Deployment failed. Check details here: ${env.BUILD_URL}",
+            //     recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+            // )
         }
     }
-
 }

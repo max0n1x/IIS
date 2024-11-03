@@ -88,10 +88,6 @@ pipeline {
             echo "Deployment failed."
         }
 
-        always {
-            cleanWs()
-        }
-
         aborted {
             emailext (
                 subject: "Build timeout in Jenkins: ${currentBuild.fullDisplayName}",
@@ -99,6 +95,10 @@ pipeline {
             )
             echo "Deployment was not completed in time."
         }
-        
+
+
+        always {
+            cleanWs()
+        }
     }
 }

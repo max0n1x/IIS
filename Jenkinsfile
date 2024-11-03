@@ -7,7 +7,7 @@ pipeline {
         DEPLOY_PATH = '/home/jenkins-deploy/IIS'
         SSH_CREDENTIALS_ID = '228'
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
@@ -74,6 +74,7 @@ pipeline {
             //     recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             // )
             echo "Deployment was successful."
+            
         }
         failure {
             // emailext (

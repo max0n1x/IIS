@@ -13,12 +13,12 @@ WORKDIR /app
 COPY . .
 EXPOSE 3000
 
-RUN npm install --legacy-peer-deps --production
+RUN npm install --legacy-peer-deps
 
 ENV GENERATE_SOURCEMAP=false
-RUN npm run build --no-optimization
+# RUN npm run build --no-optimization
 
-RUN npm install -g serve
+# RUN npm install -g serve
 
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["npm", "start"]
 

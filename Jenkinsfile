@@ -87,5 +87,17 @@ pipeline {
             )
             echo "Deployment failed."
         }
+
+        always {
+            cleanWs()
+        }
+
+        timeout {
+            emailext (
+                subject: "Build timeout in Jenkins: ${currentBuild.fullDisplayName}",
+                body: "Deployment was not completed in time. Check details here: ${env.BUILD_URL} at time: ${currentBuild.getTime()}"
+            )
+            echo "Deployment was not completed in time."
+        }
     }
 }

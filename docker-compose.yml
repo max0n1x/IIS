@@ -11,8 +11,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 200m
-          cpus: "1.0"
+          memory: 50M
+          cpus: "0.5"
+        reservations:
+          memory: 50M
+          cpus: "0.5"
 
   backend:
     container_name: backend
@@ -26,8 +29,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 200m
-          cpus: "1.0"
+          memory: 50M
+          cpus: "0.5"
+        reservations:
+          memory: 50M
+          cpus: "0.5"
 
 networks:
   app-network:

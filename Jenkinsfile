@@ -8,6 +8,11 @@ pipeline {
         SSH_CREDENTIALS_ID = '228'
     }
 
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        timestamps()
+    }
+
     stages {
         stage('Checkout') {
             steps {

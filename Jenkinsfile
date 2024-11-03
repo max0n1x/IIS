@@ -80,6 +80,7 @@ pipeline {
             echo "Deployment was successful."
 
         }
+        
         failure {
             emailext (
                 subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",

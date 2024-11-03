@@ -15,7 +15,7 @@ EXPOSE 3000
 
 RUN npm install --legacy-peer-deps
 
-ENV GENERATE_SOURCEMAP=false
+# ENV GENERATE_SOURCEMAP=false
 # RUN npm run build --no-optimization
 
 # RUN npm install -g serve

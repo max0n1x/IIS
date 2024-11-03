@@ -68,20 +68,18 @@ pipeline {
     
     post {
         success {
-            // emailext (
-            //     subject: "Build success in Jenkins: ${currentBuild.fullDisplayName}",
-            //     body: "Deployment was successful. Check details here: ${env.BUILD_URL}",
-            //     recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-            // )
+            emailext (
+                subject: "Build success in Jenkins: ${currentBuild.fullDisplayName}",
+                body: "Deployment was successful. Check details here: ${env.BUILD_URL} at time: ${currentBuild.getTime()}"
+            )
             echo "Deployment was successful."
-            
+
         }
         failure {
-            // emailext (
-            //     subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",
-            //     body: "Deployment failed. Check details here: ${env.BUILD_URL}",
-            //     recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-            // )
+            emailext (
+                subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",
+                body: "Deployment failed. Check details here: ${env.BUILD_URL} at time: ${currentBuild.getTime()}"
+            )
             echo "Deployment failed."
         }
     }

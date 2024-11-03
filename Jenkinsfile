@@ -92,7 +92,7 @@ pipeline {
             cleanWs()
         }
 
-        timeout {
+        aborted {
             emailext (
                 subject: "Build timeout in Jenkins: ${currentBuild.fullDisplayName}",
                 body: "Deployment was not completed in time. Check details here: ${env.BUILD_URL} at time: ${currentBuild.getTime()}"

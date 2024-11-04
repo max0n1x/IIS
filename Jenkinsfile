@@ -74,8 +74,26 @@ pipeline {
     post {
         success {
             emailext (
-                subject: "Build success in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Deployment was successful. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}",
+                subject: "Build Success in Jenkins: ${currentBuild.fullDisplayName}",
+                body: """
+                    <html>
+                    <body>
+                        <p><strong style="color: green;">Deployment was successful.</strong></p>
+                        <p>Check details here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                        <p><strong>Duration:</strong> ${currentBuild.durationString}</p>
+                        <ul>
+                            <li><strong>Build Number:</strong> ${currentBuild.number}</li>
+                            <li><strong>Status:</strong> ${currentBuild.result}</li>
+                            <li><strong>Started by:</strong> ${currentBuild.getBuildCauses()}</li>
+                            <li><strong>Timestamp:</strong> ${new Date(currentBuild.startTimeInMillis).format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("UTC"))} UTC</li>
+                            <li><strong>Workspace:</strong> ${env.WORKSPACE}</li>
+                            <li><strong>Node:</strong> ${env.NODE_NAME}</li>
+                            <li><strong>Job URL:</strong> <a href="${env.JOB_URL}">${env.JOB_URL}</a></li>
+                        </ul>
+                    </body>
+                    </html>
+                """,
+                mimeType: 'text/html',
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
             echo "Deployment was successful."
@@ -83,8 +101,26 @@ pipeline {
 
         failure {
             emailext (
-                subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Deployment failed. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}",
+                subject: "Build Failed in Jenkins: ${currentBuild.fullDisplayName}",
+                body: """
+                    <html>
+                    <body>
+                        <p><strong style="color: red;">Deployment failed.</strong></p>
+                        <p>Check details here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                        <p><strong>Duration:</strong> ${currentBuild.durationString}</p>
+                        <ul>
+                            <li><strong>Build Number:</strong> ${currentBuild.number}</li>
+                            <li><strong>Status:</strong> ${currentBuild.result}</li>
+                            <li><strong>Started by:</strong> ${currentBuild.getBuildCauses()}</li>
+                            <li><strong>Timestamp:</strong> ${new Date(currentBuild.startTimeInMillis).format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("UTC"))} UTC</li>
+                            <li><strong>Workspace:</strong> ${env.WORKSPACE}</li>
+                            <li><strong>Node:</strong> ${env.NODE_NAME}</li>
+                            <li><strong>Job URL:</strong> <a href="${env.JOB_URL}">${env.JOB_URL}</a></li>
+                        </ul>
+                    </body>
+                    </html>
+                """,
+                mimeType: 'text/html',
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
             echo "Deployment failed."
@@ -92,14 +128,31 @@ pipeline {
 
         aborted {
             emailext (
-                subject: "Build timeout in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Deployment was not completed in time. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}",
+                subject: "Build Timeout in Jenkins: ${currentBuild.fullDisplayName}",
+                body: """
+                    <html>
+                    <body>
+                        <p><strong style="color: gray;">Deployment was not completed in time.</strong></p>
+                        <p>Check details here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                        <p><strong>Duration:</strong> ${currentBuild.durationString}</p>
+                        <ul>
+                            <li><strong>Build Number:</strong> ${currentBuild.number}</li>
+                            <li><strong>Status:</strong> ${currentBuild.result}</li>
+                            <li><strong>Started by:</strong> ${currentBuild.getBuildCauses()}</li>
+                            <li><strong>Timestamp:</strong> ${new Date(currentBuild.startTimeInMillis).format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("UTC"))} UTC</li>
+                            <li><strong>Workspace:</strong> ${env.WORKSPACE}</li>
+                            <li><strong>Node:</strong> ${env.NODE_NAME}</li>
+                            <li><strong>Job URL:</strong> <a href="${env.JOB_URL}">${env.JOB_URL}</a></li>
+                        </ul>
+                    </body>
+                    </html>
+                """,
+                mimeType: 'text/html',
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
             echo "Deployment was not completed in time."
         }
 
-        
         always {
             cleanWs()
         }

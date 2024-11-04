@@ -63,7 +63,7 @@ pipeline {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     script {
                         def check = sh(
-                            script: "ssh ${REMOTE_USER}@${REMOTE_HOST} 'docker ps -q -f name=frontend -f name=backend | wc -l'",
+                            script: "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'docker ps -q -f name=frontend -f name=backend | wc -l'",
                             returnStatus: true
                         )
                         if (check != 2) {

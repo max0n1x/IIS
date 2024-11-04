@@ -42,22 +42,18 @@ pipeline {
             steps {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     script {
-                        try {
-                            sh "scp -o StrictHostKeyChecking=no package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
+                        currentStage = 'Deployment'
+                        sh "scp -o StrictHostKeyChecking=no package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
 
-                            sh """
-                            ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << EOF
-                                cd ${DEPLOY_PATH}
-                                ls | grep -v 'package.tar.gz' | xargs rm -rf
-                                tar -xzf package.tar.gz
-                                rm package.tar.gz
-                                docker-compose up --build -d
-                            EOF
-                            """
-                        } catch (e) {
-                            currentStage = 'Deployment'
-                            error("Deployment failed.")
-                        }
+                        sh """
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << EOF
+                            cd ${DEPLOY_PATH}
+                            ls | grep -v 'package.tar.gz' | xargs rm -rf
+                            tar -xzf package.tar.gz
+                            rm package.tar.gz
+                            docker-compose up --build -d
+                        EOF
+                        """
                     }
                 }
             }
@@ -120,7 +116,7 @@ pipeline {
                             <li><strong>Duration:</strong> ${currentBuild.durationString}</li>
                             <li><strong>Build Number:</strong> ${currentBuild.number}</li>
                             <li><strong>Status:</strong> ${currentBuild.result}</li>
-                            <li><strong>Started by:</strong> ${currentBuild.getBuildCauses()}</li>
+                            <li><strong>Started by:</strong> ${currentBuild.getBuildCauses().collect { it.shortDescription }.join(', ')}</li>
                             <li><strong>Timestamp:</strong> ${new Date(currentBuild.startTimeInMillis).format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("UTC"))} UTC</li>
                             <li><strong>Workspace:</strong> ${env.WORKSPACE}</li>
                             <li><strong>Node:</strong> ${env.NODE_NAME}</li>

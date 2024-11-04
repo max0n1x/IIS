@@ -127,6 +127,7 @@ pipeline {
                 mimeType: 'text/html',
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
+            cleanup()
             echo "Deployment failed."
         }
 
@@ -153,6 +154,7 @@ pipeline {
                 mimeType: 'text/html',
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
+            cleanup()
             echo "Deployment was not completed in time."
         }
         always {
@@ -161,3 +163,16 @@ pipeline {
 
     }
 }
+
+def cleanup() {
+    sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+        sh """
+        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << EOF
+            pkill -9 -f 'node|npm install'
+        EOF
+        """
+    }
+}
+
+
+

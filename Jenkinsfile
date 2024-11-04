@@ -165,11 +165,11 @@ pipeline {
 
 def cleanup() {
     sshagent(credentials: [SSH_CREDENTIALS_ID]) {
-        sh '''
-        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'bash -s << 'ENDSSH'
+        sh """
+        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'bash -s' << 'ENDSSH'
             pkill -9 -f 'node|npm install'
-ENDSSH'
-        '''
+        ENDSSH
+        """
     }
 }
 

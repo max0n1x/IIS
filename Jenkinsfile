@@ -52,7 +52,7 @@ pipeline {
                             tar -xzf package.tar.gz
                             rm package.tar.gz
                             docker-compose up --build -d
-                        ENDSSH'
+ENDSSH'
                         '''
                     }
                 }
@@ -169,7 +169,7 @@ def cleanup() {
         sh '''
         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'bash -s << 'ENDSSH'
             pkill -9 -f 'node|npm install'
-        ENDSSH'
+ENDSSH'
         '''
     }
 }

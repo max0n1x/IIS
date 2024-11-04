@@ -75,7 +75,7 @@ pipeline {
         success {
             emailext (
                 subject: "Build success in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Deployment was successful. Check details here: ${env.BUILD_URL} at time: ${currentBuild.getTime()}"
+                body: "Deployment was successful. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}"
             )
             echo "Deployment was successful."
 
@@ -84,7 +84,7 @@ pipeline {
         failure {
             emailext (
                 subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Deployment failed. Check details here: ${env.BUILD_URL} at time: ${currentBuild.getTime()}"
+                body: "Deployment failed. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}"
             )
             echo "Deployment failed."
         }
@@ -92,7 +92,7 @@ pipeline {
         aborted {
             emailext (
                 subject: "Build timeout in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Deployment was not completed in time. Check details here: ${env.BUILD_URL} at time: ${currentBuild.getTime()}"
+                body: "Deployment was not completed in time. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}"
             )
             echo "Deployment was not completed in time."
         }

@@ -13,7 +13,7 @@ WORKDIR /app
 COPY . .
 EXPOSE 3000
 
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps --loglevel=error
 
 # ENV GENERATE_SOURCEMAP=false
 # RUN npm run build --no-optimization

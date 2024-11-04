@@ -16,7 +16,7 @@ docker build --pull --rm -f "Dockerfile" -t backend:latest .
 #### Frontend
 
 ```bash
-cd frontend
+cd fronten
 docker build --pull --rm -f "Dockerfile" -t frontend:latest .
 ```
 

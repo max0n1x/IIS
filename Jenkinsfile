@@ -27,7 +27,7 @@ pipeline {
                 dir('.') {
                     script {
                         try {
-                            sh 'tar --exclude=".git" --exclude="package.tar.gz" -czf package.tar.gz .'
+                            sh 'tar --exclude=".git" --exclude="package.tar.gz" --verbose -czf package.tar.gz .'
                         } catch (e) {
                             currentStage = 'Packaging'
                             error("Packaging failed.")
@@ -109,11 +109,11 @@ pipeline {
 
         failure {
             emailext (
-                subject: "Build Failed in Jenkins: ${currentBuild.fullDisplayName}",
+                subject: "Build Failed in Jenkins: ${currentBuild.fullDisplayName} on the ${currentStage} stage",
                 body: """
                     <html>
                     <body>
-                        <p><strong style="color: red;">Deployment failed in the <em>${currentStage}</em> stage.</strong></p>
+                        <p><strong style="color: red;">Pipeline failed in the <em>${currentStage}</em> stage.</strong></p>
                         <p>Check details here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
                         <ul>
                             <li><strong>Duration:</strong> ${currentBuild.durationString}</li>
@@ -135,11 +135,11 @@ pipeline {
 
         aborted {
             emailext (
-                subject: "Build Timeout in Jenkins: ${currentBuild.fullDisplayName}",
+                subject: "Build Timeout in Jenkins: ${currentBuild.fullDisplayName} on the ${currentStage} stage",
                 body: """
                     <html>
                     <body>
-                        <p><strong style="color: gray;">Deployment was not completed in time and was aborted on the <em>${currentStage}</em> stage.</strong></p>
+                        <p><strong style="color: gray;">Pipeline was not completed in time and was aborted on the <em>${currentStage}</em> stage.</strong></p>
                         <p>Check details here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
                         <ul>
                             <li><strong>Duration:</strong> ${currentBuild.durationString}</li>

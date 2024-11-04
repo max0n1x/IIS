@@ -27,6 +27,7 @@ pipeline {
                 dir('.') {
                     script {
                         try {
+                            sh 'touch package.tar.gz'
                             sh 'tar --exclude=".git" --exclude="package.tar.gz" --verbose -czf package.tar.gz .'
                         } catch (e) {
                             currentStage = 'Packaging'
@@ -145,7 +146,7 @@ pipeline {
                             <li><strong>Duration:</strong> ${currentBuild.durationString}</li>
                             <li><strong>Build Number:</strong> ${currentBuild.number}</li>
                             <li><strong>Status:</strong> ${currentBuild.result}</li>
-                            <li><strong>Started by:</strong> ${currentBuild.getBuildCauses()}</li>
+                            <li><strong>Started by:</strong> ${currentBuild.getBuildCauses().collect { it.shortDescription }.join(', ')}</li>
                             <li><strong>Timestamp:</strong> ${new Date(currentBuild.startTimeInMillis).format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("UTC"))} UTC</li>
                             <li><strong>Workspace:</strong> ${env.WORKSPACE}</li>
                             <li><strong>Node:</strong> ${env.NODE_NAME}</li>

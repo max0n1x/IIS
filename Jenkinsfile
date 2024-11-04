@@ -9,7 +9,7 @@ pipeline {
     }
 
     options {
-        timeout(time: 10, unit: 'MINUTES')
+        timeout(time: 1, unit: 'MINUTES')
         timestamps()
     }
 
@@ -75,16 +75,17 @@ pipeline {
         success {
             emailext (
                 subject: "Build success in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Deployment was successful. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}"
+                body: "Deployment was successful. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}",
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
             echo "Deployment was successful."
-
         }
 
         failure {
             emailext (
                 subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Deployment failed. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}"
+                body: "Deployment failed. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}",
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
             echo "Deployment failed."
         }
@@ -92,10 +93,12 @@ pipeline {
         aborted {
             emailext (
                 subject: "Build timeout in Jenkins: ${currentBuild.fullDisplayName}",
-                body: "Deployment was not completed in time. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}"
+                body: "Deployment was not completed in time. Check details here: ${env.BUILD_URL}. Duration: ${currentBuild.durationString}",
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
             echo "Deployment was not completed in time."
         }
+
 
         always {
             cleanWs()

@@ -46,14 +46,14 @@ pipeline {
                         sh "scp -o StrictHostKeyChecking=no package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
 
                         sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << EOF
-                            cd ${DEPLOY_PATH}
-                            ls | grep -v 'package.tar.gz' | xargs rm -rf
-                            tar -xzf package.tar.gz
-                            rm package.tar.gz
-                            docker-compose up --build -d
-                        EOF
+                            ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} \
+                            cd ${DEPLOY_PATH} && \
+                            ls | grep -v 'package.tar.gz' | xargs rm -rf && \
+                            tar -xzf package.tar.gz && \
+                            rm package.tar.gz && \
+                            docker-compose up --build -d"
                         """
+
                     }
                 }
             }
@@ -64,10 +64,10 @@ pipeline {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     script {
                         def check = sh(
-                            script: "ssh ${REMOTE_USER}@${REMOTE_HOST} 'docker ps -q -f name=my_container_name'",
+                            script: "ssh ${REMOTE_USER}@${REMOTE_HOST} 'docker ps -q -f name=frontend -f name=backend | wc -l'",
                             returnStatus: true
                         )
-                        if (check != 0) {
+                        if (check != 2) {
                             currentStage = 'Deployment Verification'
                             error("Deployment verification failed. Container is not running.")
                         }

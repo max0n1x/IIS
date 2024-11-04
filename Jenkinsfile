@@ -80,7 +80,7 @@ pipeline {
             echo "Deployment was successful."
 
         }
-        
+
         failure {
             emailext (
                 subject: "Build failed in Jenkins: ${currentBuild.fullDisplayName}",
@@ -96,7 +96,6 @@ pipeline {
             )
             echo "Deployment was not completed in time."
         }
-
 
         always {
             cleanWs()

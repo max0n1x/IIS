@@ -46,11 +46,12 @@ pipeline {
                         sh "scp -o StrictHostKeyChecking=no package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
 
                         sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'bash -s << 'ENDSSH'
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash << EOF
                             cd ${DEPLOY_PATH}
                             tar -xzf package.tar.gz
                             rm package.tar.gz
                             docker compose up --build -d'
+                        EOF
                         """
                     }
                 }

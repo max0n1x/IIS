@@ -10,15 +10,19 @@ FROM node:16-alpine as build
 
 WORKDIR /app
 
-COPY . .
-EXPOSE 3000
+COPY package*.json ./
 
 RUN npm install --legacy-peer-deps --loglevel=error
 
-# ENV GENERATE_SOURCEMAP=false
-# RUN npm run build --no-optimization
+COPY . .
 
-# RUN npm install -g serve
+ENV GENERATE_SOURCEMAP=false
 
-CMD ["npm", "start"]
+RUN npm run build
+
+RUN npm install -g serve
+
+EXPOSE 3000
+
+CMD ["serve", "-s", "build", "-l", "3000"]
 

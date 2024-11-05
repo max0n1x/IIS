@@ -11,7 +11,9 @@ pipeline {
     }
 
     options {
-        timeout(time: 2, activity: true, unit: 'HOURS')
+        timeout(time: 20, activity: true, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+        disableConcurrentBuilds()
         timestamps()
     }
 
@@ -91,7 +93,7 @@ pipeline {
                             <li><strong>Duration:</strong> ${currentBuild.durationString}</li>
                             <li><strong>Build Number:</strong> ${currentBuild.number}</li>
                             <li><strong>Status:</strong> ${currentBuild.result}</li>
-                            <li><strong>Started by:</strong> ${currentBuild.getBuildCauses()}</li>
+                            <li><strong>Started by:</strong> ${currentBuild.getBuildCauses().collect { it.shortDescription }.join(', ')}</li>
                             <li><strong>Timestamp:</strong> ${new Date(currentBuild.startTimeInMillis).format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("UTC"))} UTC</li>
                             <li><strong>Workspace:</strong> ${env.WORKSPACE}</li>
                             <li><strong>Node:</strong> ${env.NODE_NAME}</li>

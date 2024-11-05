@@ -46,12 +46,12 @@ pipeline {
                         sh "scp -o StrictHostKeyChecking=no package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
 
                         sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash << _EOF_
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash << EOF
                             cd ${DEPLOY_PATH}
                             tar -xzf package.tar.gz
                             rm package.tar.gz
                             docker compose up --build -d
-                        _EOF_
+                        << EOF
                         """
                     }
                 }
@@ -166,9 +166,9 @@ pipeline {
 def cleanup() {
     sshagent(credentials: [SSH_CREDENTIALS_ID]) {
         sh """
-        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'bash -s' << 'ENDSSH'
+        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash << EOF
             pkill -9 -f 'node|npm install'
-        ENDSSH
+        << EOF
         """
     }
 }

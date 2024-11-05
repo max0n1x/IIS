@@ -66,6 +66,7 @@ pipeline {
                             script: "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'docker ps -q -f name=frontend -f name=backend | wc -l'",
                             returnStatus: true
                         )
+                        echo "Check: ${check}"
                         if (check != 2) {
                             currentStage = 'Deployment Verification'
                             error("Deployment verification failed. Container is not running.")
@@ -167,7 +168,7 @@ def cleanup() {
     sshagent(credentials: [SSH_CREDENTIALS_ID]) {
         sh """
         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash << EOF
-            pkill -9 -f 'node|npm install'
+            sudo pkill -9 -f 'node|npm install'
         << EOF
         """
     }

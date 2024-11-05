@@ -51,7 +51,7 @@ pipeline {
                             tar -xzf package.tar.gz
                             rm package.tar.gz
                             docker compose up --build -d
-                        EOF
+                        << EOF
                         """
                     }
                 }

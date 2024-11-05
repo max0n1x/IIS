@@ -46,12 +46,12 @@ pipeline {
                         sh "scp -o StrictHostKeyChecking=no package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
 
                         sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash << EOF
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash <<EOF
                             cd ${DEPLOY_PATH}
                             tar -xzf package.tar.gz
                             rm package.tar.gz
-                            docker compose up --build -d
-<< EOF
+                            docker compose up --build -d 
+                            <<EOF
                         """
                     }
                 }
@@ -64,8 +64,9 @@ pipeline {
                     script {
                         def check = sh(
                             script: "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'docker ps -q -f name=frontend -f name=backend | wc -l'",
-                            returnStatus: true
-                        )
+                            returnStdout: true
+                        ).trim()
+
                         echo "Check: ${check}"
                         if (check != 2) {
                             currentStage = 'Deployment Verification'
@@ -169,7 +170,7 @@ def cleanup() {
         sh """
         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash << EOF
             sudo pkill -9 -f 'node|npm install'
-        << EOF
+            <<EOF
         """
     }
 }

@@ -65,7 +65,7 @@ pipeline {
                         def check = sh(
                             script: "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'docker ps -q -f name=frontend -f name=backend | wc -l'",
                             returnStdout: true
-                        ).trim()
+                        ).trim().toInteger()
 
                         echo "Check: ${check}"
                         if (check != 2) {

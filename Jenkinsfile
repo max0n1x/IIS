@@ -29,8 +29,8 @@ pipeline {
                 dir('.') {
                     script {
                         try {
-                            sh 'touch package.tar.gz'
-                            sh 'tar --exclude=".git" --exclude="package.tar.gz" --verbose -czf package.tar.gz .'
+                            sh 'docker compose -f docker-compose.yml build'
+                            sh 'docker save -o package.tar.gz frontend backend'
                         } catch (e) {
                             currentStage = 'Packaging'
                             error("Packaging failed.")
@@ -50,9 +50,8 @@ pipeline {
                         sh """
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash <<EOF
                             cd ${DEPLOY_PATH}
-                            tar -xzf package.tar.gz
-                            rm package.tar.gz
-                            docker compose up --build -d 
+                            docker load -i package.tar.gz
+                            docker-compose -f docker-compose.yml up -d
                             <<EOF
                         """
                     }

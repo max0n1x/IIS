@@ -45,13 +45,13 @@ pipeline {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     script {
                         currentStage = 'Deployment'
-                        sh "scp -o StrictHostKeyChecking=no package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
+                        sh "scp -v -o StrictHostKeyChecking=no package.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:${DEPLOY_PATH}"
 
                         sh """
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash <<EOF
                             cd ${DEPLOY_PATH}
                             docker load -i package.tar.gz
-                            docker-compose -f docker-compose.yml up -d
+                            docker compose -f docker-compose.yml up -d
                             <<EOF
                         """
                     }

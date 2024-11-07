@@ -30,7 +30,7 @@ pipeline {
                     script {
                         try {
                             sh 'docker compose -f docker-compose.yml build'
-                            sh 'docker save -o package.tar.gz frontend backend'
+                            sh 'docker save -o package.tar.gz iis-frontend iis-backend'
                         } catch (e) {
                             currentStage = 'Packaging'
                             error("Packaging failed.")

@@ -12,7 +12,7 @@ pipeline {
 
     options {
         timeout(time: 45, activity: true, unit: 'MINUTES')
-        buildDiscarder(logRotator(numToKeepStr: '5'))
+        buildDiscarder(logRotator(numToKeepStr: '10'))
         disableConcurrentBuilds()
         timestamps()
     }
@@ -52,7 +52,7 @@ pipeline {
                             cd ${DEPLOY_PATH}
                             docker load -i package.tar.gz
                             docker compose -f docker-compose.yml up -d
-                        EOF
+                        << EOF
                         """
                     }
                 }

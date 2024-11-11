@@ -198,7 +198,7 @@ export const Header = forwardRef<HTMLDivElement, HeaderProps>((props, ref) => {
 });
 
 // Function to upload an image file.
-export const uploadImage = async (image: File): Promise<string | false> => {
+export const uploadImage = async (image: File): Promise<{ url: string } | false> => {
     const formData = new FormData();
     formData.append('image', image);
 
@@ -210,8 +210,8 @@ export const uploadImage = async (image: File): Promise<string | false> => {
         });
         
         if (response.ok) {
-            const imageId: string = await response.json();
-            return imageId;
+            const data = await response.json();
+            return { url: data.url };
         } else {
             return false;
         }
@@ -252,7 +252,7 @@ export const GetUserInformation = async () => {
 }
 
 // Function to retrieve a specific item details from the server.
-export const GetItem = async (item_id: number) => {
+export const GetItem = async (item_id: string) => {
     try {
         // GET request to fetch item details.
         const response = await fetch(API_BASE_URL + "/items/" + item_id, {

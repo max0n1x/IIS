@@ -14,16 +14,16 @@ import img_svg from "../images/photo_img.svg";
 import AddItemPageStyles from "./AddItemPage.module.css";
 import "../GlobalStyles.css";
 
-const AddItemPage = () => {
+const AddItemPage: React.FC = () => {
 
-    const headerRef = useRef(null);
-    const logInRef = useRef(null);
-    const loggedIn = useRef(null);
-    const uploadContainerRef = useRef(null);
+    const headerRef = useRef<HTMLDivElement>(null);
+    const logInRef = useRef<HTMLAnchorElement>(null);
+    const loggedIn = useRef<HTMLAnchorElement>(null);
+    const uploadContainerRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
-    const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [error, setError] = useState('');
-    const fileInputRef = useRef(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [ItemData, setItemData] = useState({
         name: "",
@@ -36,45 +36,54 @@ const AddItemPage = () => {
         author_id: "",
     });
 
-    const handleInputChange = (e) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
         setItemData({
             ...ItemData,
             [e.target.name]: e.target.value,
         });
     };
 
-    const handleFiles = (file) => {
+    const handleFiles = (file : File) => {
         if (file && file.type.startsWith('image/')) {
             setSelectedFile(file);
-            uploadContainerRef.current.style.background = 'none';
+            if (uploadContainerRef.current) {
+                uploadContainerRef.current.style.background = 'none';
+            }
+
         } else {
             setError('Invalid file type');
             setSelectedFile(null);
         }
     };
 
-    const handleDragOver = (e) => {
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
     };
 
-    const handleDrop = (e) => {
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         const file = e.dataTransfer.files[0];
         handleFiles(file);
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files) {
+            return;
+        }
         const file = e.target.files[0];
         handleFiles(file);
     };
 
     const handleClick = () => {
-        fileInputRef.current.click();
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
     };
 
-    const CreateItem = async (e) => {
+    const CreateItem = async (e: React.MouseEvent<HTMLInputElement>) => {
         e.preventDefault();
-        e.target.disabled = true;
+        const target = e.target as HTMLInputElement;
+        target.disabled = true;
 
         if (!selectedFile || !ItemData.name || !ItemData.price || !ItemData.conditionId || !ItemData.categoryId) {
             setError('Please fill all fields');
@@ -129,13 +138,13 @@ const AddItemPage = () => {
                 navigate('/profile?action_id=add');
             } else if (response.status === 500) {
                 setError("Server error");
-                e.target.disabled = false;
+                target.disabled = false;
             } else {
-                e.target.disabled = false;
+                target.disabled = false;
                 throw new Error('Something went wrong');
             }
         } catch (err) {
-            e.target.disabled = false;
+            target.disabled = false;
             setError("Failed to connect to the server");
         }
     }
@@ -145,21 +154,21 @@ const AddItemPage = () => {
             fixElementHeight(headerRef.current);
         }
 
-        if (headerRef.current && logInRef.current && loggedIn.current) {
-            checkLogin(loggedIn, logInRef).then((result) => {
+        const checkLoginStatus = async () => {
+            await checkLogin(loggedIn, logInRef).then((result) => {
                 if (!result) {
                     navigate('/login');
                 }
-            }
-            );
+            });
+        };
+
+        if (headerRef.current && logInRef.current && loggedIn.current) {
+            checkLoginStatus();
         } else {
             setTimeout(() => {
-                checkLogin(loggedIn, logInRef).then((result) => {
-                    if (!result) {
-                        navigate('/login');
-                    }
+                if (headerRef.current && logInRef.current && loggedIn.current) {
+                    checkLoginStatus();
                 }
-                );
             }, 100);
         }
         
@@ -200,8 +209,7 @@ const AddItemPage = () => {
                 </div>
 
                 <div className={AddItemPageStyles["price-input-container"]}>
-                    <label htmlFor="price" className={AddItemPageStyles["price-label"]}
-                    value = {ItemData.price} onChange={handleInputChange}>Price:</label>
+                    <label htmlFor="price" className={AddItemPageStyles["price-label"]}>Price:</label>
                     <input type="text" name="price" className={AddItemPageStyles["price-input"]} id="price" 
                     placeholder="set item price" value = {ItemData.price} onChange = {handleInputChange}/>
                 </div>

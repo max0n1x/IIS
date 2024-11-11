@@ -13,7 +13,7 @@ import { fixElementHeight, checkLogin, Contacts, Header, GetItem, API_BASE_URL }
 import "../GlobalStyles.css";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const ItemPage = () => {
+const ItemPage: React.FC = () => {
 
     const headerRef = useRef(null);
     const logInRef = useRef(null);
@@ -87,7 +87,12 @@ const ItemPage = () => {
         if (headerRef.current) {
             fixElementHeight(headerRef.current);
         }
-
+        
+        if(!item_id) {
+            navigate('*');
+            return;
+        }
+        
         GetItem(item_id).then((item) => {
             if(!item) {
                 navigate('*');

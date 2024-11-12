@@ -14,21 +14,21 @@ import img_svg from "../images/photo_img.svg";
 import EditItemPageStyles from "./EditItemPage.module.css";
 import "../GlobalStyles.css";
 
-const EditItemPage = () => {
+const EditItemPage: React.FC = () => {
 
-    const headerRef = useRef(null);
-    const logInRef = useRef(null);
-    const loggedIn = useRef(null);
+    const headerRef = useRef<HTMLDivElement>(null);
+    const logInRef = useRef<HTMLAnchorElement>(null);
+    const loggedIn = useRef<HTMLAnchorElement>(null);
 
-    const PriceInputRef = useRef(null);
-    const NameInputRef = useRef(null);
-    const SizeInputRef = useRef(null);
-    const DescriptionInputRef = useRef(null);
-
-    const uploadContainerRef = useRef(null);
+    const PriceInputRef = useRef<HTMLInputElement>(null);
+    const NameInputRef = useRef<HTMLInputElement>(null);
+    const SizeInputRef = useRef<HTMLInputElement>(null);
+    const DescriptionInputRef = useRef<HTMLTextAreaElement>(null);
+    
+    const uploadContainerRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [file, setFile] = useState(null);
+    const [selectedFile, setSelectedFile] = useState<string | null>(null);
+    const [file, setFile] = useState<File | null>(null);
     const fileInputRef = useRef(null);
     const [error, setError] = useState('');
 
@@ -44,87 +44,104 @@ const EditItemPage = () => {
         image_path: "",
     });
 
-    const setUnlock = (e) => {
+    const setUnlock = (e : React.MouseEvent<HTMLInputElement>) => {
         e.preventDefault();
-        if(e.target.name === "edit-Price"){
-            PriceInputRef.current.disabled = false;
-            PriceInputRef.current.focus();
-        } else if(e.target.name === "edit-Name"){
-            NameInputRef.current.disabled = false;
-            NameInputRef.current.focus();
-        } else if(e.target.name === "edit-Size"){
-            SizeInputRef.current.disabled = false;
-            SizeInputRef.current.focus();
-        } else if(e.target.name === "edit-Description"){
-            DescriptionInputRef.current.disabled = false;
-            DescriptionInputRef.current.focus();
+
+        const target = e.target as HTMLInputElement;
+
+        if(PriceInputRef.current && NameInputRef.current && SizeInputRef.current && DescriptionInputRef.current){
+            if(target.name === "edit-Price"){
+                PriceInputRef.current.disabled = false;
+                PriceInputRef.current.focus();
+            } else if(target.name === "edit-Name"){
+                NameInputRef.current.disabled = false;
+                NameInputRef.current.focus();
+            } else if(target.name === "edit-Size"){
+                SizeInputRef.current.disabled = false;
+                SizeInputRef.current.focus();
+            } else if(target.name === "edit-Description"){
+                DescriptionInputRef.current.disabled = false;
+                DescriptionInputRef.current.focus();
+            }
         }
     }
 
-    const inputAbort = (e) => {
+    const inputAbort = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         e.preventDefault();
         e.target.disabled = true;
     }
 
-    const HandleKeys = (e) => {
+    const HandleKeys = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         if(e.key === "Enter"){
             e.preventDefault();
-            e.target.disabled = true;
+            (e.target as HTMLInputElement | HTMLTextAreaElement).disabled = true;
         }
     }
 
-    const handleInputChange = (e) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setItemData({
             ...ItemData,
             [e.target.name]: e.target.value,
         });
     };
 
-    const handleFiles = (file) => {
+    const handleFiles = (file : File) => {
         if (file && file.type.startsWith('image/')) {
             setSelectedFile(URL.createObjectURL(file));
-            uploadContainerRef.current.style.background = 'none';
+            if (uploadContainerRef.current) {
+                uploadContainerRef.current.style.background = 'none';
+            }
             setFile(file);
         } else {
             setError('File type not supported');
         }
     };
 
-    const handleDragOver = (e) => {
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
     };
 
-    const handleDrop = (e) => {
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         const file = e.dataTransfer.files[0];
         handleFiles(file);
     };
 
-    const handleChange = (e) => {
-        const file = e.target.files[0];
-        handleFiles(file);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files ? e.target.files[0] : null;
+        if (file) handleFiles(file); 
     };
 
     const handleClick = () => {
-        fileInputRef.current.click();
+        if (fileInputRef.current) (fileInputRef.current as HTMLInputElement).click();
     };
 
-    const EditItem = async (e) => {
+    const EditItem = async (e: React.MouseEvent<HTMLInputElement>) => {
         e.preventDefault();
-        e.target.disabled = true;
+        const target = e.target as HTMLInputElement;
+        target.disabled = true;
         const queryParams = new URLSearchParams(location.search);
         const item_id = queryParams.get('item_id');
-        if(e.target.value === "DONE"){
-            var responseUrl = "";
+        if(target.value === "DONE" && selectedFile){
+            let responseUrl: string | { url: string } | null = "";
             if(selectedFile.includes('imgur')){
                 responseUrl = {url: selectedFile};
-            }else{
-                responseUrl = await uploadImage(file);
+            }else if (file) {
+                const result = await uploadImage(file);
+                responseUrl = result ? result : null;
                 if(!responseUrl){
                     setError('Failed to upload image');
                     return;
                 }
             }
+
+            const image_path = typeof responseUrl === 'object' && responseUrl !== null ? responseUrl.url : responseUrl;
+
+            if (!image_path) {
+                setError('Failed to upload image');
+                return;
+            }
+
             const data = {
                 name: ItemData.name,
                 description: ItemData.description,
@@ -132,7 +149,7 @@ const EditItemPage = () => {
                 size: ItemData.size,
                 conditionId: ItemData.conditionId,
                 categoryId: ItemData.categoryId,
-                image_path: responseUrl.url,
+                image_path: image_path,
             };
 
             try {
@@ -148,13 +165,13 @@ const EditItemPage = () => {
                     navigate('/profile?action_id=edit');
                 } else if (response.status === 401) {
                     setError("Unauthorized");
-                    e.target.disabled = false;
+                    target.disabled = false;
                 } else if (response.status === 404) {
                     setError("Item not found");
-                    e.target.disabled = false;
+                    target.disabled = false;
                 } else if (response.status === 500) {
                     setError("Server error");
-                    e.target.disabled = false;
+                    target.disabled = false;
                 } else {
                     throw new Error('Something went wrong');
                 }
@@ -162,9 +179,9 @@ const EditItemPage = () => {
             } catch (error) {
                 console.error('Error:', error);
                 setError('An error occurred while editing item');
-                e.target.disabled = false;
+                target.disabled = false;
             }
-        } else if(e.target.value === "DELETE"){
+        } else if(target.value === "DELETE"){
             try {
                 const response = await fetch(API_BASE_URL + "/items/" + item_id + "/delete", {
                     method: 'DELETE',
@@ -201,6 +218,11 @@ const EditItemPage = () => {
         const queryParams = new URLSearchParams(location.search);
         const item_id = queryParams.get('item_id');
 
+        if (!item_id) {
+            navigate('*');
+            return;
+        }
+
         GetItem(item_id).then((data) => {
             if(data){
                 setItemData({
@@ -214,7 +236,9 @@ const EditItemPage = () => {
                 });
                 if(data.image_path){
                     setSelectedFile(data.image_path);
-                    uploadContainerRef.current.style.background = 'none';
+                    if (uploadContainerRef.current) {
+                        uploadContainerRef.current.style.background = 'none';
+                    }
                 }
                 const cookies = document.cookie.split(';');
                 const userId = cookies.find(cookie => cookie.includes('user_id'))
@@ -236,13 +260,16 @@ const EditItemPage = () => {
             }
         });
 
-        if(logInRef.current && loggedIn.current){
-            checkLogin(loggedIn, logInRef).then((result) => {
+        const verifyLoginStatus = async () => {
+            await checkLogin(loggedIn, logInRef).then((result) => {
                 if (!result) {
                     navigate('/login');
                 }
-            }
-            );
+            });
+        };
+
+        if(logInRef.current && loggedIn.current){
+            verifyLoginStatus();
         }
 
     }

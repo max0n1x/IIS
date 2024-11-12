@@ -17,38 +17,51 @@ import "../GlobalStyles.css";
 import trashBin from "../images/trashbin.svg";
 import editMessage from "../images/EditMessage.svg"
 
-const ChatsPage = () => {
-    const headerRef = useRef(null);
-    const logInRef = useRef(null);
-    const loggedIn = useRef(null);
+const ChatsPage: React.FC = () => {
+    const headerRef = useRef<HTMLDivElement>(null);
+    const logInRef = useRef<HTMLAnchorElement>(null);
+    const loggedIn = useRef<HTMLAnchorElement>(null);
     const navigate = useNavigate();
 
     const chatsRef = useRef(null);
-    const chatHeader = useRef(null);
-    const chatImage = useRef(null);
-    const inputRef = useRef(null);
-    const chatContainer = useRef(null);
-    const emptyChatContainer = useRef(null);
+    const chatHeader = useRef<HTMLSpanElement>(null);
+    const chatImage = useRef<HTMLImageElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const chatContainer = useRef<HTMLDivElement>(null);
+    const emptyChatContainer = useRef<HTMLDivElement>(null);
 
-    const [chats_state, setChats] = useState([]);
-    const [messages, setMessages] = useState([]);
+    const [chats_state, setChats] = useState<Chat[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [message, setMessage] = useState("");
     const [isEditing, setIsEditing] = useState(false);
-    const [messageId, setMessageId] = useState(null);
+    const [messageId, setMessageId] = useState<string | null>(null);
 
-    const [chat_id, setChatId] = useState(null);
-    const [item_id, setItemId] = useState(null);
+    const [chat_id, setChatId] = useState<string | null>(null);
+    const [item_id, setItemId] = useState<string | null>(null);         
 
     const [error, setError] = useState('');
 
-    const fetchInterval = useRef(null);
+    const fetchInterval = useRef<number | NodeJS.Timeout | null>(null);
 
     const location = useLocation();
 
-    const addChat = (username, item_name, chat_id, item_id) => {
+    interface Message {
+        message: string;
+        user_from: string;
+        id: string | number;
+    }
+
+    interface Chat {
+        chat_id: string;
+        item_id: string;
+        username: string;
+        item_name: string;
+    }
+
+    const addChat = (username : string, item_name : string, chat_id : string, item_id : string) => {
         return (
             <div className={ChatsPageStyles['one-chat-container']} key = {chat_id} onClick={openChat} id = {chat_id}
-            value = {item_id}>
+            data-item-id = {item_id}>
                 <img src={user_svg} alt="Upload" className={ChatsPageStyles["chat-user-image"]}/>
                 <span className={ChatsPageStyles["user-id-label"]}>User: {username}</span>
                 <span className={ChatsPageStyles["item-id-label"]}>Item: {item_name}</span>
@@ -56,11 +69,22 @@ const ChatsPage = () => {
         );
     }
 
-    const addMessage = (message, isMine, id) => {
-        const cookie = document.cookie.split(';').find(cookie => cookie.includes('user_id')).split('=')[1];
-        if (parseInt(isMine) === parseInt(cookie)) {
+    const addMessage = (message : string, isMine : string, id : number) => {
+        const cookie = document.cookie.split(';').find(cookie => cookie.includes('user_id'));
+        if (!cookie) {
+            navigate('/login');
+            return;
+        }
+        const userId = cookie.split('=')[1];
+
+        if (cookie === undefined) {
+            navigate('/login');
+            return;
+        }
+
+        if (parseInt(isMine) === parseInt(userId)) {
             return (
-                <div className={ChatsPageStyles['each-chat-message-container-mine']} key = {id} value = {id}>
+                <div className={ChatsPageStyles['each-chat-message-container-mine']} key = {id} data-message-id = {id}>
                     <span className={ChatsPageStyles['each-chat-message']}>{message}</span>
                     <img src={trashBin} alt="sent" className={ChatsPageStyles["trash-bin"]} onClick={handleDeleteMessage}/>
                     <img src={editMessage} alt="sent" className={ChatsPageStyles["edit-message"]} onClick={handleEditMessage}/>
@@ -75,8 +99,13 @@ const ChatsPage = () => {
         }
     }
 
-    const handleDeleteChat = async(event) => {
-        const chat_id = chatHeader.current.value;
+    const handleDeleteChat = async() => {
+
+        if (!chatHeader.current) {
+            return;
+        }
+
+        const chat_id = chatHeader.current.dataset.chatId;
 
         const response = await fetch(API_BASE_URL + "/chat/" + chat_id + "/delete", {
             method: 'DELETE',
@@ -87,18 +116,25 @@ const ChatsPage = () => {
 
         const result = await response.json();
 
-        if (response.ok) {
+        if (response.ok && emptyChatContainer.current && chatContainer.current) {
             emptyChatContainer.current.style.display = "flex";
             chatContainer.current.style.display = "none";
-            clearInterval(fetchInterval.current);
+
+            if (fetchInterval.current) {
+                clearInterval(fetchInterval.current as number | NodeJS.Timeout);
+            }
+
             await fetchChats();
         } else {
             setError(result.message);
         }
     }
 
-    const handleDeleteMessage = async(event) => {
-        const message_id = event.target.parentNode.getAttribute('value');
+    const handleDeleteMessage = async(event: React.MouseEvent) => {
+        event.preventDefault();
+        const message_id = (event.target as HTMLImageElement).parentNode
+            ? ((event.target as HTMLImageElement).parentNode as HTMLDivElement).getAttribute('value')
+            : null;
 
         const response = await fetch(API_BASE_URL + "/message/" + message_id + "/delete", {
             method: 'DELETE',
@@ -111,35 +147,55 @@ const ChatsPage = () => {
 
         if (response.ok) {
             console.log("deleted message");
-            await fetchMessages(chatHeader.current.value);
+            if (chatHeader.current) {
+                await fetchMessages(chatHeader.current.dataset.chatId);
+            }
         } else {
             setError(result.message);
         }
     }
 
-    const handleEditMessage = async(event) => {
-        const message_id = event.target.parentNode.getAttribute('value');
-        const message = event.target.parentNode.childNodes[0].innerHTML;
+    const handleEditMessage = async(event : React.MouseEvent) => {
+        const message_id = (event.target as HTMLImageElement).parentNode ? 
+                ((event.target as HTMLImageElement).parentNode as HTMLDivElement).getAttribute('value') : null;
+
+        const message_span = (event.target as HTMLImageElement).parentNode 
+            ? ((event.target as HTMLImageElement).parentNode as HTMLDivElement).childNodes[0] as HTMLSpanElement
+            : null;
+
+        const message = message_span ? message_span.innerHTML : "";
+            
         setMessage(message);
-        inputRef.current.focus();
+
+        if (inputRef.current) {
+            inputRef.current.focus();
+        }
         
         setIsEditing(true);
         setMessageId(message_id);
     }
     
-    const setMessageHandle = (event) => {
+    const setMessageHandle = (event: React.ChangeEvent<HTMLInputElement>) => {
         setMessage(event.target.value);
-    }
+    };    
 
-    const keyDownHandle = async(event) => {
+    const keyDownHandle = async (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
             await handleSent();
         }
-    }
+    };    
 
     const handleSent = async() => {
-        const user_from = document.cookie.split(';').find(cookie => cookie.includes('user_id')).split('=')[1];
-        const chat_id = chatHeader.current.value;
+        const user_from = document.cookie
+            .split(';')
+            .find(cookie => cookie.includes('user_id'))
+            ?.split('=')[1] || null;
+
+        if (!chatHeader.current) {
+            return;
+        }
+
+        const chat_id = chatHeader.current.dataset.chatId
         const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
         if (message === "") {
@@ -197,29 +253,44 @@ const ChatsPage = () => {
     }
 
 
-    const openChat = useCallback(async(event, chat_id, item_id) => {
-
-        emptyChatContainer.current.style.display = "none";
-        chatContainer.current.style.display = "flex";
+    const openChat = useCallback(async(event?: React.MouseEvent<HTMLDivElement> | null | boolean, chat_id?: string, item_id?: string) => {
+        
+        if (emptyChatContainer.current && chatContainer.current) {
+            emptyChatContainer.current.style.display = "none";
+            chatContainer.current.style.display = "flex";
+        }
 
         if (chat_id === undefined && item_id === undefined) {
-            if(event.target.className === ChatsPageStyles['one-chat-container']) {
-                chat_id = event.target.id;
-                item_id = event.target.getAttribute('value');
-            } else {
-                chat_id = event.target.parentNode.id;
-                item_id = event.target.parentNode.getAttribute('value');
+            if (event && typeof event !== 'boolean') {
+                if ((event.target as HTMLElement).className === ChatsPageStyles['one-chat-container']) {
+                    chat_id = (event.target as HTMLElement).id;
+                    item_id = (event.target as HTMLElement).getAttribute('data-item-id') || '';
+                } else {
+                    const parentNode = (event.target as HTMLElement).parentNode as HTMLElement;
+                    chat_id = parentNode.id;
+                    item_id = parentNode.getAttribute('data-item-id') || '';
+                }
             }
+        }
+
+        if (!chat_id || !item_id) {
+            return;
         }
         
         await GetItem(item_id).then((item) => {
             if (item.name.length > 30) {
                 item.name = item.name.substring(0, 30) + "...";
             }
-            chatHeader.current.innerHTML = item.name;
-            chatHeader.current.value = chat_id;
 
-            if (item.image_path) {
+            if (chatHeader.current) {
+                chatHeader.current.innerHTML = item.name;
+            }
+
+            if (chatHeader.current) {
+                chatHeader.current.dataset.chatId = chat_id;
+            }
+           
+            if (item.image_path && chatImage.current) {
                 chatImage.current.src = item.image_path;
             }
         }
@@ -228,7 +299,7 @@ const ChatsPage = () => {
         await fetchMessages(chat_id);
 
         if (fetchInterval.current) {
-            clearInterval(fetchInterval.current);
+            clearInterval(fetchInterval.current as number | NodeJS.Timeout);
         }
 
         fetchInterval.current = setInterval(async() => {
@@ -238,7 +309,12 @@ const ChatsPage = () => {
 
     }, []);
 
-    const fetchMessages = async(chat_id) => {
+    const fetchMessages = async(chat_id : string | undefined) => {
+
+        if (!chat_id) {
+            return;
+        }
+
         const response = await fetch(API_BASE_URL + "/chat/" + chat_id + "/messages", {
             method: 'GET',
             headers: {
@@ -248,7 +324,7 @@ const ChatsPage = () => {
 
         const data = await response.json();
 
-        const messages = [];
+        const messages: Message[] = [];
         for (const message of data) {
             messages.push({message: message.message, user_from: message.user_from, id: message.message_id});
         }
@@ -316,8 +392,10 @@ const ChatsPage = () => {
         }
         );
 
-        emptyChatContainer.current.style.display = "flex";
-        chatContainer.current.style.display = "none";
+        if (chatContainer.current && emptyChatContainer.current) {
+            emptyChatContainer.current.style.display = "flex";
+            chatContainer.current.style.display = "none";
+        }
 
     } , []);
 
@@ -339,12 +417,15 @@ const ChatsPage = () => {
             fixElementHeight(headerRef.current);
         }
 
-        checkLogin(loggedIn, logInRef).then((result) => {
-            if (!result) {
-                navigate('/login');
-            }
-        }
-        );
+        const verifyLoginStatus = async () => {
+            await checkLogin(loggedIn, logInRef).then((result) => {
+                if (!result) {
+                    navigate('/login');
+                }
+            });
+        };
+
+        verifyLoginStatus();
 
     } , [navigate]);
 
@@ -389,7 +470,7 @@ const ChatsPage = () => {
                         <img src={trashBin} alt="Delete" className={ChatsPageStyles["each-chat-delete"]} onClick={handleDeleteChat} />
                     </div>
                     <div className={ChatsPageStyles['each-chat-messages']}>
-                        {messages.map(message => addMessage(message.message, message.user_from, message.id))}
+                        {messages.map(message => addMessage(message.message, message.user_from, Number(message.id)))}
                     </div>
 
                     <div className={ChatsPageStyles['each-chat-input-container']}>

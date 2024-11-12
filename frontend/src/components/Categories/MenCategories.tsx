@@ -10,21 +10,29 @@
 import React, {useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import MenCategoriesStyle from "./MenCategories.module.css";
+import manClothing from "../images/men_clothing.webp";
+import manBags from "../images/men_bags.webp";
+import manJewelry from "../images/men_jewelry.webp";
+import menAccessories from "../images/men_accesories.webp";
 import { fixElementHeight, checkLogin, Contacts, Header } from "../Utils";
 import "../GlobalStyles.css";
 
-const MenCategoriesPage = () => {
+const MenCategoriesPage:React.FC = () => {
 
-    const headerRef = useRef(null);
-    const logInRef = useRef(null);
-    const loggedIn = useRef(null);
+    const headerRef = useRef<HTMLDivElement>(null);
+    const logInRef = useRef<HTMLAnchorElement>(null);
+    const loggedIn = useRef<HTMLAnchorElement>(null);
 
     useEffect(() => {
         if (headerRef.current) {
             fixElementHeight(headerRef.current);
         }
-    
-        checkLogin(loggedIn, logInRef);
+
+        const verifyLoginStatus = async () => {
+            await checkLogin(loggedIn, logInRef);
+        };
+
+        verifyLoginStatus();
     }, []);
 
     return (
@@ -37,7 +45,7 @@ const MenCategoriesPage = () => {
 
                 <div className="categories-container">
                     <Link className="category-item" to="/items?categoryId=menClothing">
-                        <img src="https://images.pexels.com/photos/4210866/pexels-photo-4210866.jpeg" alt="Clothing"/>
+                        <img src={manClothing} alt="Clothing"/>
                         <div className="centered-text" style = {{color: "#093825"}}>Clothing</div>
                     </Link>
                     <Link className="category-item" to = "/items?categoryId=menShoes">
@@ -45,15 +53,15 @@ const MenCategoriesPage = () => {
                         <div className="centered-text" style = {{color: "var(--titanium)"}}>Shoes</div>
                     </Link>
                     <Link className="category-item" to = "/items?categoryId=menAccessories">
-                        <img src="https://netstorage-legit.akamaized.net/images/afee74afb4d8ea20.jpg" alt="Accessories"/>
+                        <img src={menAccessories} alt="Accessories"/>
                         <div className="centered-text" style = {{color: "var(--titanium)"}}>Accessories</div>
                     </Link>
                     <Link className="category-item" to = "/items?categoryId=menBags">
-                        <img src="https://newtraveltrait.com/wp-content/uploads/2023/02/pexels-ketut-subiyanto-4246101-1-683x1024.jpg" alt="Bags and luggage"/>
+                        <img src={manBags} alt="Bags and Luggage"/>
                         <div className="centered-text" style = {{color: "var(--titanium)"}}>Bags and Luggage</div>
                     </Link>
                     <Link className="category-item" to = "/items?categoryId=menJewelry">
-                        <img src="https://images.pexels.com/photos/2155319/pexels-photo-2155319.jpeg" alt="Jewelry and watches"/>
+                        <img src={manJewelry} alt="Jewelry and watches"/>
                         <div className="centered-text" style = {{color: "var(--titanium)"}}>Jewelry and watches</div>
                     </Link>
                     <Link className="category-item" to = "/items?categoryId=menVintage">

@@ -37,7 +37,6 @@ uvicorn_access_logger.addHandler(loki_logs_handler)
 
 db = Database()
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

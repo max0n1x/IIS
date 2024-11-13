@@ -46,7 +46,6 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
-
 @app.get('/api/v1.0')
 async def root() -> dict:
     return {"message": "Oops, you are not supposed to be here"}

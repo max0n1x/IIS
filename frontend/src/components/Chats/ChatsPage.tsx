@@ -133,7 +133,7 @@ const ChatsPage: React.FC = () => {
     const handleDeleteMessage = async(event: React.MouseEvent) => {
         event.preventDefault();
         const message_id = (event.target as HTMLImageElement).parentNode
-            ? ((event.target as HTMLImageElement).parentNode as HTMLDivElement).getAttribute('value')
+            ? ((event.target as HTMLImageElement).parentNode as HTMLDivElement).getAttribute('data-message-id')
             : null;
 
         const response = await fetch(API_BASE_URL + "/message/" + message_id + "/delete", {
@@ -156,8 +156,9 @@ const ChatsPage: React.FC = () => {
     }
 
     const handleEditMessage = async(event : React.MouseEvent) => {
+        event.preventDefault();
         const message_id = (event.target as HTMLImageElement).parentNode ? 
-                ((event.target as HTMLImageElement).parentNode as HTMLDivElement).getAttribute('value') : null;
+                ((event.target as HTMLImageElement).parentNode as HTMLDivElement).getAttribute('data-message-id') : null;
 
         const message_span = (event.target as HTMLImageElement).parentNode 
             ? ((event.target as HTMLImageElement).parentNode as HTMLDivElement).childNodes[0] as HTMLSpanElement

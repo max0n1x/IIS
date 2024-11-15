@@ -18,7 +18,7 @@ import { Link } from "react-router-dom";
 import React, { forwardRef, Ref, MutableRefObject } from "react";
 
 // API base URL constant for server requests.
-export const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://garage-sale.shop/api/v1.0' : 'http://localhost:8080';
+export const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://garage-sale.cz/api/v1.0' : 'http://localhost:8080';
 
 // Function to fix the height of an element based on its computed style.
 export const fixElementHeight = (element: HTMLElement | null): void => {

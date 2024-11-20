@@ -11,7 +11,7 @@
 import mysql.connector
 from mysql.connector import Error
 from src.config import DATABASE_HOST, DATABASE_PORT, DATABASE_USER, DATABASE_PASSWORD
-from src.crypto import Crypto
+from src.hasher import Hasher
 from src.models import Optional
 import os
 
@@ -38,6 +38,18 @@ class Database:
 
             cursor = self.conn.cursor()
 
+            cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+                            id INT PRIMARY KEY AUTO_INCREMENT,
+                            username VARCHAR(255) UNIQUE NOT NULL,
+                            password_hash TEXT NOT NULL,
+                            name TEXT,
+                            surname TEXT,
+                            email TEXT,
+                            phone TEXT,
+                            address TEXT,
+                            date_of_birth TEXT);
+            ''')
+
             cursor.execute('''CREATE TABLE IF NOT EXISTS items (
                             id INT PRIMARY KEY AUTO_INCREMENT,
                             name TEXT NOT NULL,
@@ -49,19 +61,6 @@ class Database:
                             image_path TEXT NOT NULL,
                             author_id INT NOT NULL,
                             FOREIGN KEY (author_id) REFERENCES users (id));
-            ''')
-
-            cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                            id INT PRIMARY KEY AUTO_INCREMENT,
-                            username VARCHAR(255) UNIQUE NOT NULL,
-                            encrypted_password TEXT NOT NULL,
-                            `key` TEXT NOT NULL,
-                            name TEXT,
-                            surname TEXT,
-                            email TEXT,
-                            phone TEXT,
-                            address TEXT,
-                            date_of_birth TEXT);
             ''')
 
             cursor.execute('''CREATE TABLE IF NOT EXISTS chats (
@@ -212,11 +211,11 @@ class Database:
             if row:
                 return -1
 
-            crypto = Crypto()
-            encrypted = crypto.encrypt(user['password'])
+            hasher = Hasher()
+            hash = hasher.hash_password(user['password'])
 
-            cursor.execute('INSERT INTO users (username, encrypted_password, `key`) VALUES (%s, %s, %s)', 
-                        (user['username'], encrypted["encrypted_password"], encrypted["key"]))
+            cursor.execute('INSERT INTO users (username, password_hash) VALUES (%s, %s)', 
+                        (user['username'], hash))
 
             self.conn.commit()
 
@@ -241,10 +240,9 @@ class Database:
             if not row:
                 return -1
 
-            crypto = Crypto()
-            decrypted = crypto.decrypt(row[2], row[3])
+            hasher = Hasher()
 
-            if decrypted != user['password']:
+            if not hasher.validate_password(row[2], user['password']):
                 return -2
 
             return row[0]

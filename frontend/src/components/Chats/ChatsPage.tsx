@@ -253,6 +253,28 @@ const ChatsPage: React.FC = () => {
         }
     }
 
+    const fetchMessages = useCallback(async(chat_id : string | undefined) => {
+
+        if (!chat_id) {
+            return;
+        }
+
+        const response = await fetch(API_BASE_URL + "/chat/" + chat_id + "/messages", {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        });
+
+        const data = await response.json();
+
+        const messages: Message[] = [];
+        for (const message of data) {
+            messages.push({message: message.message, user_from: message.user_from, id: message.message_id});
+        }
+
+        setMessages(messages.reverse());
+    } , []);
 
     const openChat = useCallback(async(event?: React.MouseEvent<HTMLDivElement> | null | boolean, chat_id?: string, item_id?: string) => {
         
@@ -308,30 +330,7 @@ const ChatsPage: React.FC = () => {
         }
         , 1000);
 
-    }, []);
-
-    const fetchMessages = async(chat_id : string | undefined) => {
-
-        if (!chat_id) {
-            return;
-        }
-
-        const response = await fetch(API_BASE_URL + "/chat/" + chat_id + "/messages", {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-        });
-
-        const data = await response.json();
-
-        const messages: Message[] = [];
-        for (const message of data) {
-            messages.push({message: message.message, user_from: message.user_from, id: message.message_id});
-        }
-
-        setMessages(messages.reverse());
-    }
+    }, [fetchMessages]);
 
     const fetchChats = useCallback(async() => {
         const cookies = document.cookie.split(';');
@@ -398,7 +397,7 @@ const ChatsPage: React.FC = () => {
             chatContainer.current.style.display = "none";
         }
 
-    } , []);
+    } , [fetchChats]);
 
     useEffect(() => {
 
@@ -411,7 +410,7 @@ const ChatsPage: React.FC = () => {
             clearInterval(chatsUpdate);
         }
 
-    } , []);
+    } , [fetchChats]);
 
     useEffect(() => {
         if (headerRef.current) {

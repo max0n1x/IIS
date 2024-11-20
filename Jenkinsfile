@@ -50,7 +50,6 @@ pipeline {
                         sh """
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} /bin/bash << 'EOF'
                             cd ${DEPLOY_PATH}
-                            $API_URL=https://garage-sale.cz/api/v1.0
                             docker load -i package.tar.gz
                             docker compose -f docker-compose.yml up -d
                         << EOF

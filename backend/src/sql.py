@@ -13,7 +13,8 @@ from mysql.connector import Error
 from src.config import DATABASE_HOST, DATABASE_PORT, DATABASE_USER, DATABASE_PASSWORD
 from src.hasher import Hasher
 from src.models import Optional
-import os
+from fastapi import HTTPException
+import random
 
 
 class Database:
@@ -82,6 +83,19 @@ class Database:
                             FOREIGN KEY (chat_id) REFERENCES chats (chat_id) ON DELETE CASCADE);
             ''')
 
+            cursor.execute('''CREATE TABLE IF NOT EXISTS validation_keys (
+                            user_id INT PRIMARY KEY NOT NULL,
+                            vKey TEXT NOT NULL,
+                            expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE);
+            ''')
+
+            cursor.execute('''CREATE EVENT IF NOT EXISTS autodelete
+                            ON SCHEDULE EVERY 10 MINUTE
+                            DO
+                            DELETE FROM validation_keys WHERE expires_at < NOW();
+            ''')
+
             cursor.execute('''CREATE TABLE IF NOT EXISTS unauthorized_users (
                             id INT PRIMARY KEY AUTO_INCREMENT);
             ''')
@@ -92,8 +106,83 @@ class Database:
             print(e)
             exit(1)
 
+    def insert_validation_key(self, user_id: int, vKey: str) -> bool:
+        """ insert a new validation key """
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('DELETE FROM validation_keys WHERE user_id = %s', (user_id,))
+
+            cursor.execute('INSERT INTO validation_keys (user_id, vKey, expires_at) VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL 4 HOUR))', (user_id, vKey))
+
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            return False
+        
+    def check_validation_key(self, user_id: int, vKey: str) -> bool:
+        """ check if the validation key is valid for a user """
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT * FROM validation_keys WHERE user_id = %s AND vKey = %s', (user_id, vKey))
+
+            row = cursor.fetchone()
+
+            return True if row else False
+        
+        except Error as e:
+
+            print(e)
+            return False
+        
+    def logout_user(self, user_id: int, vKey: str) -> bool:
+        """ remove validation key if user and key are valid """
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('DELETE FROM validation_keys WHERE user_id = %s AND vKey = %s', (user_id, vKey))
+
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            return False
+
+        
+    def get_user_id_by_validation_key(self, vKey: str) -> int:
+        """ get user id by validation key """
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT user_id FROM validation_keys WHERE vKey = %s', (vKey,))
+
+            row = cursor.fetchone()
+
+            return row[0] if row else -1
+        
+        except Error as e:
+
+            print(e)
+            return -1
+
     def insert_item(self, **item) -> bool:
         """ insert a new item into the items table """
+
+        if not self.check_validation_key(item['author_id'], item['vKey']):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
         try:
 
             cursor = self.conn.cursor()
@@ -148,11 +237,24 @@ class Database:
             print(e)
             return {}
 
-    def delete_item(self, item_id: int) -> bool:
+    def delete_item(self, item_id: int, author_id : int, vKey : str) -> bool:
         """ delete a single item from the items table """
+
+        if not self.check_validation_key(author_id, vKey):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        if not self.get_item(item_id):
+            raise HTTPException(status_code=404, detail='Item not found')
+
         try:
 
             cursor = self.conn.cursor()
+
+            cursor.execute('SELECT author_id FROM items WHERE id = %s', (item_id,))
+            row = cursor.fetchone()
+
+            if row[0] != author_id:
+                return False
 
             cursor.execute('DELETE FROM items WHERE id = %s', (item_id,))
             self.conn.commit()
@@ -175,17 +277,30 @@ class Database:
             print(e)
             return False
 
-    def update_item(self, item_id: int, **item) -> bool:
+    def update_item(self, **item) -> bool:
         """ update a single item from the items table """
+
+        if not self.check_validation_key(item['author_id'], item['vKey']):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        if not self.get_item(item['item_id']):
+            raise HTTPException(status_code=404, detail='Item not found')
+        
         try:
 
             cursor = self.conn.cursor()
+
+            cursor.execute('SELECT author_id FROM items WHERE id = %s', (item['item_id'],))
+            row = cursor.fetchone()
+
+            if row[0] != item['author_id']:
+                return False
 
             cursor.execute('''
                 UPDATE items 
                 SET name = %s, description = %s, price = %s, size = %s, category_id = %s, condition_id = %s, image_path = %s 
                 WHERE id = %s
-            ''', (item['name'], item['description'], item['price'], item['size'], item['categoryId'], item['conditionId'], item['image_path'], item_id))
+            ''', (item['name'], item['description'], item['price'], item['size'], item['categoryId'], item['conditionId'], item['image_path'], item['item_id']))
 
             self.conn.commit()
 
@@ -238,22 +353,30 @@ class Database:
             row = cursor.fetchone()
 
             if not row:
-                return -1
+                return -1, ''
 
             hasher = Hasher()
 
             if not hasher.validate_password(row[2], user['password']):
-                return -2
+                return -2, ''
+            
+            vKey = hasher.generate_vkey()
 
-            return row[0]
+            self.insert_validation_key(row[0], vKey)
+
+            return row[0], vKey
         
         except Error as e:
 
             print(e)
-            return -3
+            return -3, ''
         
-    def get_user_items_bd(self, user_id: int) -> list:
+    def get_user_items_bd(self, user_id: int, vKey: str) -> list:
         """ get all items from the items table """
+
+        if not self.check_validation_key(user_id, vKey):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
         try:
 
             cursor = self.conn.cursor()
@@ -271,8 +394,12 @@ class Database:
             print(e)
             return None
         
-    def get_user(self, user_id : int) -> dict:
+    def get_user(self, user_id : int, vKey : str) -> dict:
         """ get a single user from the users table """
+
+        if not self.check_validation_key(user_id, vKey):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
         try:
 
             cursor = self.conn.cursor()
@@ -297,14 +424,37 @@ class Database:
             print(e)
             return {}
         
-    def update_user(self, user_id : int, **user) -> bool:
+    def get_user_by_id(self, user_id: int) -> dict:
+        """ get a single user from the users table """
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT username FROM users WHERE id = %s', (user_id,))
+
+            row = cursor.fetchone()
+
+            return {
+                'username': row[0],
+            } if row else {}
+
+        except Error as e:
+
+            print(e)
+            return {} 
+        
+    def update_user(self, **user) -> bool:
         """ update a single user from the users table """
+
+        if not self.check_validation_key(user['user_id'], user['vKey']):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
         try:
 
             cursor = self.conn.cursor()
 
             cursor.execute('UPDATE users SET name = %s, surname = %s, email = %s, phone = %s, address = %s, date_of_birth = %s WHERE id = %s', 
-                        (user['name'], user['surname'], user['email'], user['phone'], user['address'], user['date_of_birth'], user_id))
+                        (user['name'], user['surname'], user['email'], user['phone'], user['address'], user['date_of_birth'], user['user_id']))
 
             self.conn.commit()
 
@@ -315,8 +465,43 @@ class Database:
             print(e)
             return False
         
+    def delete_user(self, user_id : int) -> bool:
+
+
+        
+        try:
+                
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT chat_id FROM chats WHERE user_from = %s OR user_to = %s', (user_id, user_id))
+            rows = cursor.fetchall()
+
+            for row in rows:
+                cursor.execute('DELETE FROM messages WHERE chat_id = %s', (row[0],))
+                self.conn.commit()
+
+            cursor.execute('DELETE FROM chats WHERE user_from = %s OR user_to = %s', (user_id, user_id))
+            self.conn.commit()
+
+            cursor.execute('DELETE FROM items WHERE author_id = %s', (user_id,))
+            self.conn.commit()
+
+            cursor.execute('DELETE FROM users WHERE id = %s', (user_id,))
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+                
+            print(e)
+            return False
+    
     def create_chat(self, **chat) -> int:
         """ create a new chat """
+
+        if not self.check_validation_key(chat['user_from'], chat['vKey']):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
         try:
 
             cursor = self.conn.cursor()
@@ -341,8 +526,15 @@ class Database:
             print(e)
             return -1
         
-    def get_chat(self, chat_id: int) -> dict:
+    def get_chat(self, chat_id: int, user_id: int, vKey: str) -> dict:
         """ get a single chat """
+
+        if not self.check_validation_key(user_id, vKey):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        if not self.get_user(user_id, vKey):
+            raise HTTPException(status_code=404, detail='User not found')
+        
         try:
 
             cursor = self.conn.cursor()
@@ -350,6 +542,12 @@ class Database:
             cursor.execute('SELECT * FROM chats WHERE chat_id = %s', (chat_id,))
 
             row = cursor.fetchone()
+
+            if not row:
+                return {}
+            
+            if row[1] != user_id and row[2] != user_id:
+                return {}
 
             keys = ('chat_id', 'user_from', 'user_to', 'item_id')
 
@@ -360,8 +558,12 @@ class Database:
             print(e)
             return {}
         
-    def get_chats(self, user_id: int) -> list:
+    def get_chats(self, user_id: int, vKey: str) -> list:
         """ get all chats for a user """
+
+        if not self.check_validation_key(user_id, vKey):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
         try:
 
             cursor = self.conn.cursor()
@@ -379,11 +581,24 @@ class Database:
             print(e)
             return []
         
-    def delete_chat(self, chat_id: int) -> bool:
+    def delete_chat(self, chat_id: int, user_id: int, vKey: str) -> bool:
         """ delete a single chat """
+
+        if not self.check_validation_key(user_id, vKey):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        if not self.get_chat(chat_id, user_id, vKey):
+            raise HTTPException(status_code=404, detail='Chat not found')
+        
         try:
 
             cursor = self.conn.cursor()
+
+            cursor.execute('SELECT user_from, user_to FROM chats WHERE chat_id = %s', (chat_id,))
+            row = cursor.fetchone()
+
+            if row[0] != user_id and row[1] != user_id:
+                return False
 
             cursor.execute('DELETE FROM chats WHERE chat_id = %s', (chat_id,))
 
@@ -402,12 +617,19 @@ class Database:
         
     def create_message(self, **message) -> int:
         """ create a new message """
+
+        if not self.check_validation_key(message['author_id'], message['vKey']):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        if not self.get_chat(message['chat_id'], message['author_id'], message['vKey']):
+            raise HTTPException(status_code=404, detail='Chat not found')
+        
         try:
 
             cursor = self.conn.cursor()
 
             cursor.execute('INSERT INTO messages (chat_id, user_from, message, date) VALUES (%s, %s, %s, %s)', 
-               (message['chat_id'], message['user_from'], message['message'], message['date']))
+               (message['chat_id'], message['author_id'], message['message'], message['date']))
 
             self.conn.commit()
 
@@ -418,8 +640,15 @@ class Database:
             print(e)
             return -1
     
-    def get_messages(self, chat_id: int) -> list:
+    def get_messages(self, chat_id: int, user_id: int, vKey: str) -> list:
         """ get all messages for a chat """
+
+        if not self.check_validation_key(user_id, vKey):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        if not self.get_chat(chat_id, user_id, vKey):
+            return []
+        
         try:
 
             cursor = self.conn.cursor()
@@ -437,11 +666,21 @@ class Database:
             print(e)
             return []
         
-    def delete_message(self, message_id: int) -> bool:
+    def delete_message(self, message_id: int, user_id: int, vKey: str) -> bool:
         """ delete a single message """
+        
+        if not self.check_validation_key(user_id, vKey):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
         try:
 
             cursor = self.conn.cursor()
+
+            cursor.execute('SELECT user_from FROM messages WHERE message_id = %s', (message_id,))
+            row = cursor.fetchone()
+
+            if row[0] != user_id:
+                return False
 
             cursor.execute('DELETE FROM messages WHERE message_id = %s', (message_id,))
 
@@ -454,13 +693,17 @@ class Database:
             print(e)
             return False
         
-    def update_message(self, message_id: int, **message) -> bool:
+    def update_message(self, **message) -> bool:
         """ update a single message """
+        
+        if not self.check_validation_key(message['author_id'], message['vKey']):
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
         try:
 
             cursor = self.conn.cursor()
 
-            cursor.execute('''UPDATE messages SET message = %s WHERE message_id = %s''', (message['message'], message_id))
+            cursor.execute('''UPDATE messages SET message = %s WHERE message_id = %s''', (message['message'], message['message_id']))
 
             self.conn.commit()
 

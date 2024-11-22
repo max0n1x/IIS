@@ -8,7 +8,7 @@
 
 """
 
-import bcrypt
+import bcrypt, hashlib, random, string
 
 PEPPER = "iis_garage_sale_prod_2024"
 
@@ -21,3 +21,5 @@ class Hasher:
         password_with_pepper = (password + PEPPER).encode('utf-8')
         return bcrypt.checkpw(password_with_pepper, hashed_password.encode('utf-8'))
     
+    def generate_vkey(self) -> str:
+        return hashlib.sha3_512(''.join(random.choices(string.ascii_letters + string.digits, k=256)).encode()).hexdigest()

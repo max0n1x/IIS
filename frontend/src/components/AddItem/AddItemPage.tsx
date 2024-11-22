@@ -87,11 +87,13 @@ const AddItemPage: React.FC = () => {
 
         if (!selectedFile || !ItemData.name || !ItemData.price || !ItemData.conditionId || !ItemData.categoryId) {
             setError('Please fill all fields');
+            target.disabled = false
             return;
         }
 
         if(ItemData.conditionId === "-none-" || ItemData.categoryId === "-none-") {
             setError('Please fill all fields');
+            target.disabled = false
             return;
         }
 
@@ -99,6 +101,7 @@ const AddItemPage: React.FC = () => {
 
         if (!response) {
             setError('Failed to get user information');
+            target.disabled = false;
             return;
         }
 
@@ -106,11 +109,13 @@ const AddItemPage: React.FC = () => {
 
         if (!responseUrl) {
             setError('Failed to upload image');
+            target.disabled = false;
             return;
         }
 
         if (!parseFloat(ItemData.price)) {
             setError('Invalid price');
+            target.disabled = false
             return;
         }
 
@@ -123,6 +128,7 @@ const AddItemPage: React.FC = () => {
             categoryId: ItemData.categoryId,
             image_path: responseUrl.url,
             author_id: parseInt(response.id),
+
         };
 
         try {

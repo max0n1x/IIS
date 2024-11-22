@@ -43,15 +43,22 @@ export const ifUserLoggedIn = async () => {
         return false;
     }
     const userId = cookies.find(cookie => cookie.includes('user_id'));
-    if (userId) {
+    const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+    if (userId && vKey) {
         try {
             // Fetching user data from the server.
-            const response = await fetch(API_BASE_URL + "/user/" + userId.split('=')[1], {
-                method: 'GET',
+            const response = await fetch(API_BASE_URL + "/user", {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                body: JSON.stringify({
+                    user_id: userId.split('=')[1],
+                    vKey: vKey.split('=')[1]
+                }),
             });
+            
             if (response.ok) {
                 const userData = await response.json();
                 return userData.username;
@@ -91,26 +98,37 @@ export const checkLogin = async (
                 username.length > 6 ? `Logged in as ${username.slice(0, 6)}...` : `Logged in as ${username}`;
             fixElementWidth(loggedInElement.current);
 
+            // Remove the unauthorized cookie if present
+            document.cookie = 'unauthorized=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
             // Hide the login element when logged in
             return true;
         } else {
             // Show the login element if not logged in
             logInElement.current.style.display = 'flex';
             fixElementWidth(logInElement.current);
+            
+            if (!document.cookie.includes('unauthorized=true') && !document.cookie.includes('user_id')) {
+                // Inform the server about unauthorized access
+                const response = await fetch(`${API_BASE_URL}/user/unauthorized`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                });
 
-            // Inform the server about unauthorized access
-            const response = await fetch(`${API_BASE_URL}/user/unauthorized`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            });
+                if (!response.ok) {
+                    console.error('Unauthorized access log failed:', response.status, response.statusText);
+                } else {
+                    console.info('Unauthorized access successfully logged.');
+                    document.cookie = 'unauthorized=true; path=/';
+                }
 
-            if (!response.ok) {
-                console.error('Unauthorized access log failed:', response.status, response.statusText);
+                return false;
+            
             } else {
-                console.info('Unauthorized access successfully logged.');
+                console.warn('Unauthorized access has already been logged.');
+                return false;
             }
 
-            return false;
         }
     } catch (error) {
         console.error('An error occurred during the login check:', error);
@@ -201,7 +219,6 @@ export const Header = forwardRef<HTMLDivElement, HeaderProps>((props, ref) => {
 export const uploadImage = async (image: File): Promise<{ url: string } | false> => {
     const formData = new FormData();
     formData.append('image', image);
-
     try {
         // POST request to upload the image.
         const response = await fetch(`${API_BASE_URL}/image/upload`, {
@@ -224,20 +241,29 @@ export const uploadImage = async (image: File): Promise<{ url: string } | false>
 // Function to retrieve user information based on stored cookies.
 export const GetUserInformation = async () => {
     const cookies = document.cookie.split(';');
+
     if (!cookies) {
         return false;
     }
+
     const userId = cookies.find(cookie => cookie.includes('user_id'));
-    if (!userId) {
+    const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+    if (!userId || !vKey) {
         return false;
     }
+
     try {
         // Fetching user data from the server.
-        const response = await fetch(API_BASE_URL + "/user/" + userId.split('=')[1], {
-            method: 'GET',
+        const response = await fetch(API_BASE_URL + "/user/", {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
+            body: JSON.stringify({
+                user_id: userId.split('=')[1],
+                vKey: vKey.split('=')[1]
+            }),
         });
         if (response.ok) {
             const userData = await response.json();

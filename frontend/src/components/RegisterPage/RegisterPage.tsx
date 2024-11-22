@@ -10,7 +10,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RegisterPageStyle from './RegisterPage.module.css';
-import { fixElementHeight, API_BASE_URL } from '../Utils';
+import { fixElementHeight, API_BASE_URL, GetUserInformation } from '../Utils';
 import '../GlobalStyles.css';
 
 const RegisterPage: React.FC = () => {
@@ -23,12 +23,36 @@ const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+
+        const checkIfLoggedIn = async () => {
+            await GetUserInformation().then((data) => {
+                if (data) {
+                    navigate('/');
+                }
+            }
+        );};
+
+        const cookies = document.cookie.split(';');
+        const user_id = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if (cookies && user_id && vKey) {
+            checkIfLoggedIn();
+        }
+
         if (headerRef.current) {
             fixElementHeight(headerRef.current);
         }
+        
     }, []);
 
     const handleRegister = async () => {
+
+        if (!username || !password) {
+          setError("Username or password cannot be empty");
+          return;
+        } 
+
         if (password !== confirmPassword) {
           setError("Passwords do not match");
           return;

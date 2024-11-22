@@ -11,7 +11,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import LoginPageStyle from './LoginPage.module.css';
-import { API_BASE_URL, fixElementHeight } from '../Utils';
+import { API_BASE_URL, fixElementHeight, GetUserInformation } from '../Utils';
 import '../GlobalStyles.css';
 
 // Variable to store the timer for password visibility toggle.
@@ -33,6 +33,23 @@ const LoginPage: React.FC = () => {
 
     // useEffect hook for performing side effects, in this case, fixing element height on component mount.
     useEffect(() => {
+
+        const cookies = document.cookie.split(';');
+        const user_id = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        const checkIfLoggedIn = async () => {
+            await GetUserInformation().then((data) => {
+                if (data) {
+                    navigate('/');
+                }
+            }
+        );};
+
+        if (cookies && user_id && vKey) {
+            checkIfLoggedIn();
+        }
+
         if (elementRef.current) {
             fixElementHeight(elementRef.current);
         }
@@ -60,6 +77,7 @@ const LoginPage: React.FC = () => {
             // POST request to login endpoint with user credentials.
             const response = await fetch(API_BASE_URL + "/login", {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -68,11 +86,7 @@ const LoginPage: React.FC = () => {
     
             // Handling responses based on different HTTP status codes.
             if (response.ok) {
-                // Successful login: setting user cookie and navigating to home page.
-                const userData = await response.json();
-                const date = new Date();
-                date.setTime(date.getTime() + (7 * 24 * 60 * 60 * 1000));
-                document.cookie = `user_id=${userData}; expires=${date.toUTCString()}; path=/; SameSite=None; Secure`;
+                // Successful login: navigating to home page.
                 navigate('/');
             } else if (response.status === 401) {
                 // Handling authentication failure.

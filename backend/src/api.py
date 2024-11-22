@@ -8,13 +8,14 @@
 
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi import FastAPI, HTTPException, UploadFile, Response
 import uvicorn
 from src.config import ENDPOINT_HOST, ENDPOINT_PORT
 from src.sql import Database
 from fastapi.middleware.cors import CORSMiddleware
-from src.models import Item, ItemUpdate, User, UserUpdate, Chat, ChatMessage, ChatMessageUpdate
+from src.models import *
 from src.imgur import ImageUploader
+from datetime import datetime, timedelta, timezone
 import logging
 
 app = FastAPI()
@@ -42,29 +43,29 @@ async def create_chat(chat: Chat) -> int:
         return res
     raise HTTPException(status_code=500, detail='Server error')
 
-@app.delete('/api/v1.0/chat/{chat_id}/delete')
-async def delete_chat(chat_id: int) -> bool:
-    if db.delete_chat(chat_id):
+@app.post('/api/v1.0/chat/delete')
+async def delete_chat(user : CookieChatUser) -> bool:
+    if db.delete_chat(user.chat_id, user.user_id, user.vKey):
         return True
     raise HTTPException(status_code=500, detail='Server error')
 
-@app.get('/api/v1.0/chats/{chat_id}')
-async def get_chat(chat_id: int) -> dict:
-    chat = db.get_chat(chat_id)
+@app.post('/api/v1.0/chat')
+async def get_chat(user : CookieChatUser) -> dict:
+    chat = db.get_chat(user.chat_id, user.user_id, user.vKey)
     if chat:
         return chat
     raise HTTPException(status_code=500, detail='Server error')
 
-@app.get('/api/v1.0/user/{user_id}/chats')
-async def get_chats(user_id: int) -> list[dict]:
-    chats = db.get_chats(user_id)
+@app.post('/api/v1.0/user/chats')
+async def get_chats(user : CookieUser) -> list[dict]:
+    chats = db.get_chats(user.user_id, user.vKey)
     if chats is not None:
         return chats
     raise HTTPException(status_code=500, detail='Server error')
 
-@app.get('/api/v1.0/chat/{chat_id}/messages')
-async def get_messages(chat_id: int) -> list[dict]:
-    messages = db.get_messages(chat_id)
+@app.post('/api/v1.0/chat/messages')
+async def get_messages(user : CookieChatUser) -> list[dict]:
+    messages = db.get_messages(user.chat_id, user.user_id, user.vKey)
     if messages is not None:
         return messages
     raise HTTPException(status_code=500, detail='Server error')
@@ -75,15 +76,15 @@ async def create_message(message: ChatMessage) -> bool:
         return True
     raise HTTPException(status_code=500, detail='Server error')
 
-@app.delete('/api/v1.0/message/{message_id}/delete')
-async def delete_message(message_id: int) -> bool:
-    if db.delete_message(message_id):
+@app.post('/api/v1.0/message/delete')
+async def delete_message(message : ChatMessageDelete) -> bool:
+    if db.delete_message(message.message_id, message.author_id, message.vKey):
         return True
     raise HTTPException(status_code=500, detail='Server error')
 
-@app.put('/api/v1.0/message/{message_id}/update')
-async def update_message(message_id: int, message: ChatMessageUpdate) -> bool:
-    if db.update_message(message_id, **message.dict(exclude_unset=True)):
+@app.post('/api/v1.0/message/update')
+async def update_message(message: ChatMessageUpdate) -> bool:
+    if db.update_message(**message.dict()):
         return True
     raise HTTPException(status_code=500, detail='Server error')
 
@@ -117,51 +118,79 @@ async def user_registration(user : User) -> bool:
 
 
 @app.post('/api/v1.0/login')
-async def user_login(user : User) -> int:
-    """ login a user and return user id """
-    user_id = db.login_user(**user.dict())
+async def user_login(user : User, response: Response) -> dict:
+    """ login a user and set cookie """
+    user_id, validation_hash = db.login_user(**user.dict())
     if user_id >= 0:
-        return user_id
+
+        response.set_cookie(
+            key="user_id",
+            value=user_id,
+            max_age=4 * 60 * 60,
+            path="/",
+            samesite="lax",
+        )
+
+        response.set_cookie(
+            key="vKey",
+            value=validation_hash,
+            max_age=4 * 60 * 60,
+            path="/",
+            samesite="lax",
+        )
+
+        return {"Status": "Logged in"}
     elif user_id == -1:
         raise HTTPException(status_code=404, detail='User not found')
     elif user_id == -2:
         raise HTTPException(status_code=401, detail='Incorrect username or password')
     else:
         raise HTTPException(status_code=500, detail='Server error')
-    
 
-
-@app.put('/api/v1.0/user/{user_id}/update')
-async def user_update(user_id : int, user : UserUpdate) -> bool:
+@app.post('/api/v1.0/user/update')
+async def user_update(user : UserUpdate) -> bool:
     """ update user data """
-    if db.update_user(user_id, **user.dict(exclude_unset=True)):
+    if db.update_user(**user.dict(exclude_unset=True)):
         return True
     else:
         raise HTTPException(status_code=500, detail='Server error')
 
+@app.post('/api/v1.0/user')
+async def get_user(user : CookieUser) -> dict:
+    user = db.get_user(**user.dict())
+    if user:
+        return user
+    raise HTTPException(status_code = 500, detail='Server error')
 
-@app.get('/api/v1.0/user/{user_id}')
-async def get_user(user_id : int) -> dict:
-    user = db.get_user(user_id)
+@app.get('/api/v1.0/public/user/{user_id}')
+async def get_user_by_id(user_id: int) -> dict:
+    user = db.get_user_by_id(user_id)
     if user:
         return user
     raise HTTPException(status_code = 500, detail='Server error')
     
-
-
-@app.get('/api/v1.0/user/{user_id}/items')
-async def get_user_items(user_id: int) -> list[dict]:
-    items = db.get_user_items_bd(user_id)
+@app.post('/api/v1.0/user/items')
+async def get_user_items(user : CookieUser) -> list[dict]:
+    items = db.get_user_items_bd(user.user_id, user.vKey)
     if items:
         return items
     elif items == []:
         return []
     raise HTTPException(status_code = 500, detail='Server error')
+
+@app.post('/api/v1.0/user/logout')
+async def user_logout(user : CookieUser) -> bool:
+    if db.logout_user(**user.dict()):
+        return True
+    else:
+        raise HTTPException(status_code=500, detail='Server error')
         
 
-@app.delete('/api/v1.0/user/{user_id}/delete')
-async def delete_user():
-    pass
+@app.post('/api/v1.0/user/delete')
+async def delete_user(user : CookieUser) -> bool:
+    if db.delete_user():
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
 
 
 @app.get('/api/v1.0/items/{category_id}/category')
@@ -178,22 +207,22 @@ async def get_item(item_id: int) -> dict:
 
 
 @app.post('/api/v1.0/item/create')
-async def create_item(item: Item) -> Item:
+async def create_item(item: Item) -> dict:
     if db.insert_item(**item.dict()):
         return item
     raise HTTPException(status_code=500, detail='Server error')
 
 
-@app.delete('/api/v1.0/items/{item_id}/delete')
-async def delete_item(item_id: int) -> dict:
-    if db.delete_item(item_id):
+@app.post('/api/v1.0/item/delete')
+async def delete_item(item : ItemUpdate) -> dict:
+    if db.delete_item(item.item_id, item.author_id, item.vKey):
         return {'message': 'Item deleted'}
     raise HTTPException(status_code=500, detail='Server error')
 
 
-@app.put('/api/v1.0/items/{item_id}/update')
-async def update_item(item_id: int, item: ItemUpdate) -> bool:
-    sucess = db.update_item(item_id, **item.dict(exclude_unset=True))
+@app.post('/api/v1.0/item/update')
+async def update_item(item: ItemUpdate) -> bool:
+    sucess = db.update_item(**item.dict(exclude_unset=True))
     if sucess:
         return True
     else:

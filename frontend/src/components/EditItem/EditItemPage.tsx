@@ -122,6 +122,20 @@ const EditItemPage: React.FC = () => {
         target.disabled = true;
         const queryParams = new URLSearchParams(location.search);
         const item_id = queryParams.get('item_id');
+        const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'));
+        const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'));
+        if (!user_id || !vKey) {
+            setError('User not found');
+            navigate('/login');
+            return;
+        }
+
+        if (!item_id) {
+            setError('Item not found');
+            navigate('/');
+            return;
+        }
+
         if(target.value === "DONE" && selectedFile){
             let responseUrl: string | { url: string } | null = "";
             if(selectedFile.includes('imgur')){
@@ -143,6 +157,7 @@ const EditItemPage: React.FC = () => {
             }
 
             const data = {
+                item_id: parseInt(item_id),
                 name: ItemData.name,
                 description: ItemData.description,
                 price: parseFloat(ItemData.price),
@@ -150,11 +165,13 @@ const EditItemPage: React.FC = () => {
                 conditionId: ItemData.conditionId,
                 categoryId: ItemData.categoryId,
                 image_path: image_path,
+                author_id: parseInt(user_id.split('=')[1]),
+                vKey: vKey.split('=')[1],
             };
 
             try {
-                const response = await fetch(API_BASE_URL + "/items/" + item_id + "/update", {
-                    method: 'PUT',
+                const response = await fetch(API_BASE_URL + "/item/update", {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -183,28 +200,36 @@ const EditItemPage: React.FC = () => {
             }
         } else if(target.value === "DELETE"){
             try {
-                const response = await fetch(API_BASE_URL + "/items/" + item_id + "/delete", {
-                    method: 'DELETE',
+                const response = await fetch(API_BASE_URL + "/item/delete", {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    body: JSON.stringify({item_id: item_id, 
+                        vKey: vKey.split('=')[1],
+                        author_id: parseInt(user_id.split('=')[1])})
                 });
 
                 if (response.ok) {
                     navigate('/profile?action_id=delete');
                 } else if (response.status === 401) {
                     setError("Unauthorized");
+                    target.disabled = false;
                 } else if (response.status === 404) {
                     setError("Item not found");
+                    target.disabled = false;
                 } else if (response.status === 500) {
                     setError("Server error");
+                    target.disabled = false;
                 } else {
                     throw new Error('Something went wrong');
+                    target.disabled = false;
                 }
 
             } catch (error) {
                 console.error('Error:', error);
                 setError('An error occurred while deleting item');
+                target.disabled = false;
             }
         }
     };

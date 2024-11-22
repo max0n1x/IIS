@@ -116,7 +116,48 @@ const UserPage: React.FC = () => {
     };
 
     const handleLogOutClick = async () => {
-        document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        const cookies = document.cookie.split(';');
+
+        if(!cookies){
+            navigate('/login');
+            return;
+        }
+
+        const userId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if(!userId || !vKey){
+            navigate('/login');
+            return;
+        }
+
+        const data = {
+            user_id : userId.split('=')[1],
+            vKey : vKey.split('=')[1]
+        };
+
+        try {
+            const response = await fetch(API_BASE_URL + "/user/logout", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "vKey=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                navigate('/');
+            } else {
+                throw new Error('Something went wrong');
+            }
+
+        } catch (err) {
+            console.error('Error:', err);
+            setError("Failed to connect to the server");
+        }
+
         navigate('/');
     }
     
@@ -130,13 +171,16 @@ const UserPage: React.FC = () => {
         }
 
         const userId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
 
-        if(!userId){
+        if(!userId || !vKey){
             navigate('/login');
             return;
         }
 
         const data = {
+            user_id : userId.split('=')[1],
+            vKey : vKey.split('=')[1],
             name: UserData.name,
             surname: UserData.surname,
             email: UserData.email,
@@ -146,8 +190,8 @@ const UserPage: React.FC = () => {
         };
     
         try {
-            const response = await fetch(API_BASE_URL + "/user/" + userId.split('=')[1] + "/update", {
-                method: 'PUT',
+            const response = await fetch(API_BASE_URL + "/user/update", {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -237,13 +281,20 @@ const UserPage: React.FC = () => {
         }
 
         const userId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
 
-        const fetchItems = async (user_id : string) => {
-            const response = await fetch(API_BASE_URL + "/user/" + user_id + "/items", {
-                method: 'GET',
+        if(!userId || !vKey){
+            navigate('/login');
+            return;
+        }
+
+        const fetchItems = async (user_id : string, vKey : string) => {
+            const response = await fetch(API_BASE_URL + "/user/items", {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                body: JSON.stringify({user_id: user_id, vKey: vKey})
             });
             const data = await response.json();
             for (const item of data) {
@@ -254,8 +305,8 @@ const UserPage: React.FC = () => {
             setItems(data);
         }
         
-        if(userId){
-            fetchItems(userId.split('=')[1]);
+        if(userId && vKey){
+            fetchItems(userId.split('=')[1], vKey.split('=')[1]);
         } else {
             navigate('/login');
             return;
@@ -274,7 +325,7 @@ const UserPage: React.FC = () => {
         }, 2000);  
 
         const interval = setInterval(() => {
-            fetchItems(userId.split('=')[1]);
+            fetchItems(userId.split('=')[1], vKey.split('=')[1]);
         }
         , 3000);
 

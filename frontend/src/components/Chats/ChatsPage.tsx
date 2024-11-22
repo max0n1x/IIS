@@ -16,6 +16,7 @@ import sendIcon from "../images/ArrowCircleRight.svg";
 import "../GlobalStyles.css";
 import trashBin from "../images/trashbin.svg";
 import editMessage from "../images/EditMessage.svg"
+import { CodeGen } from "ajv";
 
 const ChatsPage: React.FC = () => {
     const headerRef = useRef<HTMLDivElement>(null);
@@ -71,11 +72,14 @@ const ChatsPage: React.FC = () => {
 
     const addMessage = (message : string, isMine : string, id : number) => {
         const cookie = document.cookie.split(';').find(cookie => cookie.includes('user_id'));
+
         if (!cookie) {
             navigate('/login');
             return;
         }
+
         const userId = cookie.split('=')[1];
+    
 
         if (cookie === undefined) {
             navigate('/login');
@@ -106,12 +110,20 @@ const ChatsPage: React.FC = () => {
         }
 
         const chat_id = chatHeader.current.dataset.chatId;
+        const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+        const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
 
-        const response = await fetch(API_BASE_URL + "/chat/" + chat_id + "/delete", {
-            method: 'DELETE',
+        if (!user_id || !vKey) {
+            navigate('/login');
+            return;
+        }
+
+        const response = await fetch(API_BASE_URL + "/chat/delete", {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
+            body: JSON.stringify({chat_id: chat_id, user_id: user_id, vKey: vKey})
         });
 
         const result = await response.json();
@@ -132,21 +144,31 @@ const ChatsPage: React.FC = () => {
 
     const handleDeleteMessage = async(event: React.MouseEvent) => {
         event.preventDefault();
+
         const message_id = (event.target as HTMLImageElement).parentNode
             ? ((event.target as HTMLImageElement).parentNode as HTMLDivElement).getAttribute('data-message-id')
             : null;
 
-        const response = await fetch(API_BASE_URL + "/message/" + message_id + "/delete", {
-            method: 'DELETE',
+
+        const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+        const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
+
+        if (!user_id || !vKey) {
+            navigate('/login');
+            return;
+        }
+
+        const response = await fetch(API_BASE_URL + "/message/delete", {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
+            body: JSON.stringify({message_id: message_id, author_id: user_id, vKey: vKey})
         });
 
         const result = await response.json();
 
         if (response.ok) {
-            console.log("deleted message");
             if (chatHeader.current) {
                 await fetchMessages(chatHeader.current.dataset.chatId);
             }
@@ -192,7 +214,17 @@ const ChatsPage: React.FC = () => {
             .find(cookie => cookie.includes('user_id'))
             ?.split('=')[1] || null;
 
+        const vKey = document.cookie
+            .split(';')
+            .find(cookie => cookie.includes('vKey'))
+            ?.split('=')[1] || null;
+
         if (!chatHeader.current) {
+            return;
+        }
+
+        if (!user_from || !vKey) {
+            navigate('/login');
             return;
         }
 
@@ -204,12 +236,24 @@ const ChatsPage: React.FC = () => {
         }
 
         if (isEditing) {
-            const response = await fetch(API_BASE_URL + "/message/" + messageId + "/update", {
-                method: 'PUT',
+
+            if (!messageId) {
+                return;
+            }
+
+            const data = {
+                message_id: messageId,
+                message: message,
+                author_id: user_from,
+                vKey: vKey
+            }
+
+            const response = await fetch(API_BASE_URL + "/message/update", {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({message: message}),
+                body: JSON.stringify(data),
             });
 
             await response.json();
@@ -228,7 +272,9 @@ const ChatsPage: React.FC = () => {
                 message: message,
                 user_from: user_from,
                 date: timestamp,
-                chat_id: chat_id
+                chat_id: chat_id,
+                author_id: user_from,
+                vKey: vKey
             }
 
             const response = await fetch(API_BASE_URL + "/message/create", {
@@ -239,15 +285,11 @@ const ChatsPage: React.FC = () => {
                 body: JSON.stringify(data),
             });
 
-            const result = await response.json();
-
-            await fetchMessages(chat_id);
+            await response.json();
 
             setMessage("");
 
-            if (result.ok) {
-                setError("");
-            }
+            await fetchMessages(chat_id);
 
             return;
         }
@@ -259,11 +301,20 @@ const ChatsPage: React.FC = () => {
             return;
         }
 
-        const response = await fetch(API_BASE_URL + "/chat/" + chat_id + "/messages", {
-            method: 'GET',
+        const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+        const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
+
+        if (!user_id || !vKey) {
+            navigate('/login');
+            return;
+        }
+
+        const response = await fetch(API_BASE_URL + "/chat/messages", {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
+            body: JSON.stringify({chat_id: chat_id, user_id: user_id, vKey: vKey})
         });
 
         const data = await response.json();
@@ -274,7 +325,7 @@ const ChatsPage: React.FC = () => {
         }
 
         setMessages(messages.reverse());
-    } , []);
+    } , [navigate]);
 
     const openChat = useCallback(async(event?: React.MouseEvent<HTMLDivElement> | null | boolean, chat_id?: string, item_id?: string) => {
         
@@ -328,7 +379,7 @@ const ChatsPage: React.FC = () => {
         fetchInterval.current = setInterval(async() => {
             await fetchMessages(chat_id);
         }
-        , 1000);
+        , 2000);
 
     }, [fetchMessages]);
 
@@ -340,20 +391,25 @@ const ChatsPage: React.FC = () => {
         }
 
         const user = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
 
-        if(!user) {
+        if(!user || !vKey) {
             navigate('/login');
             return;
         }
 
-        const response = await fetch(API_BASE_URL + "/user/" + user.split('=')[1] + "/chats", {
-            method: 'GET',
+        const response = await fetch(API_BASE_URL + "/user/chats", {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
+            body: JSON.stringify({user_id: parseInt(user.split('=')[1]), vKey: vKey.split('=')[1]})
         });
+
         const data = await response.json();
-        const newChats = [];
+        const newChats: Chat[] = [];
+
+        const validChatIds = new Set(data.map((chat: any) => chat.chat_id));
 
         for (const chat of data) {
             const chatExists = chats_state.some(existingChat => existingChat.chat_id === chat.chat_id);
@@ -362,11 +418,11 @@ const ChatsPage: React.FC = () => {
                 if (item.name.length > 15) {
                     item.name = item.name.substring(0, 15) + "...";
                 }
-                const userResponse = await fetch(API_BASE_URL + "/user/" + (parseInt(user.split('=')[1]) === parseInt(chat.user_to) ? chat.user_from : chat.user_to), {
+                const userResponse = await fetch(API_BASE_URL + "/public/user/" + (chat.user_from === parseInt(user.split('=')[1]) ? chat.user_to : chat.user_from), {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
-                    },
+                    }
                 });
                 const userData = await userResponse.json();
                 if (userData.username.length > 12) {
@@ -381,30 +437,30 @@ const ChatsPage: React.FC = () => {
             }
         }
 
-        setChats([...chats_state, ...newChats]);
+        const updatedChats = chats_state.filter(existingChat =>
+            validChatIds.has(existingChat.chat_id)
+        );
+
+        setChats([...updatedChats, ...newChats]);
 
     } , [chats_state, navigate]);
 
     useEffect(() => {
 
-        fetchChats().then(() => {
-            // 
-        }
-        );
-
         if (chatContainer.current && emptyChatContainer.current) {
+            console.log("blya");
             emptyChatContainer.current.style.display = "flex";
             chatContainer.current.style.display = "none";
         }
 
-    } , [fetchChats]);
+    } , []);
 
     useEffect(() => {
 
         const chatsUpdate = setInterval(async() => {
             await fetchChats();
         }
-        , 5000);
+        , 2000);
 
         return () => {
             clearInterval(chatsUpdate);
@@ -436,6 +492,7 @@ const ChatsPage: React.FC = () => {
 
         if (chat_id && item_id) {
             openChat(null, chat_id, item_id);
+            navigate('/user/chats');
         }
 
         return () => {

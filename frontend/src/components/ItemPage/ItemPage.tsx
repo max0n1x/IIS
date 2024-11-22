@@ -42,8 +42,9 @@ const ItemPage: React.FC = () => {
         }
 
         const user = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
 
-        if(!user) {
+        if(!user || !vKey) {
             navigate('/login');
             return;
         }
@@ -51,7 +52,8 @@ const ItemPage: React.FC = () => {
         const data = {
             item_id: item_id,
             user_to: ItemSeller,
-            user_from: user.split('=')[1]
+            user_from: user.split('=')[1],
+            vKey : vKey.split('=')[1]
         };
 
         if (parseInt(user.split('=')[1]) === parseInt(ItemSeller)) {

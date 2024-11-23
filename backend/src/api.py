@@ -99,13 +99,18 @@ async def update_message(message: ChatMessageUpdate) -> bool:
 """
 #------------------- NEW_CHAT -------------------#
 
-activeSockets = [{}]
+activeMessagesSockets, activeChatsSockets = [], []
 
 @app.websocket('/api/v1.0/new/chat')
 async def chat(websocket: WebSocket) -> None:
+    print(activeMessagesSockets)
     try:
         await websocket.accept()
         is_authorized = False
+
+        # check if websocket is closed
+        # if closed, remove it from active sockets
+
         while True:
             data = await websocket.receive_json()
             if not is_authorized:
@@ -114,8 +119,8 @@ async def chat(websocket: WebSocket) -> None:
                 if db.check_validation_key(user_id, vKey):
                     is_authorized = True
 
-                    if {'user_id': user_id, 'vKey': vKey, 'websocket': websocket} not in activeSockets:
-                        activeSockets.append({'user_id': user_id, 'vKey': vKey, 'websocket': websocket})
+                    if {'user_id': user_id, 'vKey': vKey, 'websocket': websocket} not in activeMessagesSockets:
+                        activeMessagesSockets.append({'user_id': user_id, 'vKey': vKey, 'websocket': websocket})
 
                     await websocket.send_json({'type' : 'system', 'message': 'Authorized'})
                 else:
@@ -129,14 +134,14 @@ async def chat(websocket: WebSocket) -> None:
                         await websocket.send_json({'type' : 'messages', 'messages': messages})
                     else:
                         await websocket.send_json({'type' : 'system', 'status': 'NOK', 'message': 'Server error'})
-                        await websocket.close()
+                        # await websocket.close()
 
                 elif data.get('action') == 'send_message':
                     if db.create_message(data.get('chat_id'), data.get('message'), 
                                          data.get('timestamp'), data.get('author_id'), data.get('vKey')):
                         await websocket.send_json({'type' : 'system', 'status': 'OK'})
                         messages = db.get_messages(data.get('chat_id'), data.get('user_id'), data.get('vKey'))
-                        for user in activeSockets:
+                        for user in activeMessagesSockets:
                             if user.get('user_id') == data.get('author_id') and user.get('vKey') == data.get('vKey'):
                                 await user.get('websocket').send_json({'type' : 'messages', 'messages': messages})
                     else:
@@ -144,8 +149,13 @@ async def chat(websocket: WebSocket) -> None:
                         # await websocket.close()
 
                 elif data.get('action') == 'edit_message':
-                    if db.update_message(data.get('message_id'), data.get('message'), data.get('user_id'), data.get('vKey')):
+                    print(data)
+                    if db.update_message(data.get('message_id'), data.get('message'), data.get('author_id'), data.get('vKey')):
                         await websocket.send_json({'type' : 'system', 'status': 'OK'})
+                        messages = db.get_messages(data.get('chat_id'), data.get('author_id'), data.get('vKey'))
+                        for user in activeMessagesSockets:
+                            if user.get('user_id') == data.get('author_id') and user.get('vKey') == data.get('vKey'):
+                                await user.get('websocket').send_json({'type' : 'messages', 'messages': messages})
                     else:
                         await websocket.send_json({'type' : 'system', 'status': 'NOK', 'message': 'Server error'})
                         # await websocket.close()
@@ -158,7 +168,8 @@ async def chat(websocket: WebSocket) -> None:
                         # await websocket.close()
 
     except WebSocketDisconnect:
-        await websocket.close()     
+        if activeMessagesSockets.count({'websocket': websocket}) > 0:
+            activeMessagesSockets.remove({'websocket': websocket})
 
 @app.websocket('/api/v1.0/new/chats')
 async def user_chats(websocket: WebSocket) -> None:
@@ -173,8 +184,8 @@ async def user_chats(websocket: WebSocket) -> None:
                 if db.check_validation_key(user_id, vKey):
                     is_authorized = True
 
-                    if {'user_id': user_id, 'vKey': vKey, 'websocket': websocket} not in activeSockets:
-                        activeSockets.append({'user_id': user_id, 'vKey': vKey, 'websocket': websocket})
+                    if {'user_id': user_id, 'vKey': vKey, 'websocket': websocket} not in activeChatsSockets:
+                        activeChatsSockets.append({'user_id': user_id, 'vKey': vKey, 'websocket': websocket})
 
                     await websocket.send_json({'type' : 'chats', 'chats': db.get_chats(user_id, vKey)})
                 else:
@@ -185,7 +196,8 @@ async def user_chats(websocket: WebSocket) -> None:
                 pass
 
     except WebSocketDisconnect:
-        await websocket.close()
+        if activeChatsSockets.count({'websocket': websocket}) > 0:
+            activeChatsSockets.remove({'websocket': websocket})
 
 @app.post('/api/v1.0/image/upload')
 async def upload_image(image: UploadFile = None) -> dict:

@@ -693,17 +693,31 @@ class Database:
             print(e)
             return False
         
-    def update_message(self, message_id 
+    def update_message(self, message_id : int, message : str, author_id : int, vKey : str) -> bool:
         """ update a single message """
         
-        if not self.check_validation_key(message['author_id'], message['vKey']):
-            raise HTTPException(status_code=401, detail='Unauthorized')
+        if not self.check_validation_key(author_id, vKey):
+            print(author_id, vKey)
+            return False
+        
+        if not message:
+            return False
         
         try:
 
             cursor = self.conn.cursor()
 
-            cursor.execute('''UPDATE messages SET message = %s WHERE message_id = %s''', (message['message'], message['message_id']))
+            cursor.execute('SELECT user_from FROM messages WHERE message_id = %s', (message_id,))
+
+            row = cursor.fetchone()
+
+            if not row:
+                return False
+
+            if row[0] != int(author_id):
+                return False
+        
+            cursor.execute('''UPDATE messages SET message = %s WHERE message_id = %s''', (message, message_id))
 
             self.conn.commit()
 

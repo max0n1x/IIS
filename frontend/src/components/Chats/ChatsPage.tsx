@@ -244,13 +244,15 @@ const ChatsPage: React.FC = () => {
             }
 
             const data = {
+                action: 'edit_message',
                 message_id: messageId,
                 message: message,
                 author_id: user_from,
-                vKey: vKey
+                vKey: vKey,
+                chat_id: chat_id
             }
 
-            if (chatsSocket.current) chatsSocket.current.send(JSON.stringify({action: 'edit_message', message_id: messageId, message: message, user_id: user_from, vKey: vKey}));
+            if (messageSocket.current) messageSocket.current.send(JSON.stringify(data));
 
             setMessage("");
             setIsEditing(false);
@@ -479,8 +481,27 @@ const ChatsPage: React.FC = () => {
             }
         }
 
+        messageSocket.current.onclose = () => {
+            setError('Connection closed by server');
+            messageSocket.current = new WebSocket(API_BASE_URL + "/new/chat");
+
+            messageSocket.current.onopen = () => {
+                const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+                const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
+
+                if (!user_id || !vKey) {
+                    startTransition(() => navigate('/login'));
+                    return;
+                }
+
+                if (messageSocket.current) messageSocket.current.send(JSON.stringify({user_id: user_id, vKey: vKey}));
+            }
+
+        }
+
         return () => {
             if (messageSocket.current) {
+                console.log('closing');
                 messageSocket.current.close();
             }
         }
@@ -516,6 +537,23 @@ const ChatsPage: React.FC = () => {
 
                 await testfetchChats(data.chats);
 
+            }
+        }
+
+        chatsSocket.current.onclose = () => {
+            setError('Connection closed by server');
+            chatsSocket.current = new WebSocket(API_BASE_URL + "/new/chats");
+
+            chatsSocket.current.onopen = () => {
+                const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+                const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
+
+                if (!user_id || !vKey) {
+                    startTransition(() => navigate('/login'));
+                    return;
+                }
+
+                if (chatsSocket.current) chatsSocket.current.send(JSON.stringify({user_id: user_id, vKey: vKey}));
             }
         }
 

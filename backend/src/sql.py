@@ -546,7 +546,7 @@ class Database:
             if not row:
                 return {}
             
-            if row[1] != user_id and row[2] != user_id:
+            if row[1] != int(user_id) and row[2] != int(user_id):
                 return {}
 
             keys = ('chat_id', 'user_from', 'user_to', 'item_id')
@@ -615,39 +615,39 @@ class Database:
             print(e)
             return False
         
-    def create_message(self, **message) -> int:
+    def create_message(self, chat_id: int, message: str, date : str, author_id: int, vKey: str) -> bool:
         """ create a new message """
 
-        if not self.check_validation_key(message['author_id'], message['vKey']):
-            raise HTTPException(status_code=401, detail='Unauthorized')
+        if not self.check_validation_key(author_id, vKey):
+            return False
         
-        if not self.get_chat(message['chat_id'], message['author_id'], message['vKey']):
-            raise HTTPException(status_code=404, detail='Chat not found')
+        if not self.get_chat(chat_id, author_id, vKey):
+            return False
         
         try:
 
             cursor = self.conn.cursor()
 
             cursor.execute('INSERT INTO messages (chat_id, user_from, message, date) VALUES (%s, %s, %s, %s)', 
-               (message['chat_id'], message['author_id'], message['message'], message['date']))
+               (chat_id, author_id, message, date))
 
             self.conn.commit()
 
-            return cursor.lastrowid
+            return True
         
         except Error as e:
 
             print(e)
-            return -1
+            return False
     
     def get_messages(self, chat_id: int, user_id: int, vKey: str) -> list:
         """ get all messages for a chat """
 
-        if not self.check_validation_key(user_id, vKey):
-            raise HTTPException(status_code=401, detail='Unauthorized')
+        # if not self.check_validation_key(user_id, vKey):
+        #     raise HTTPException(status_code=401, detail='Unauthorized')
         
-        if not self.get_chat(chat_id, user_id, vKey):
-            return []
+        # if not self.get_chat(chat_id, user_id, vKey):
+        #     raise HTTPException(status_code=404, detail='Chat not found')
         
         try:
 
@@ -693,7 +693,7 @@ class Database:
             print(e)
             return False
         
-    def update_message(self, **message) -> bool:
+    def update_message(self, message_id 
         """ update a single message """
         
         if not self.check_validation_key(message['author_id'], message['vKey']):

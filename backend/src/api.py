@@ -8,7 +8,7 @@
 
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, Response
+from fastapi import FastAPI, HTTPException, UploadFile, Response, WebSocket, WebSocketDisconnect
 import uvicorn
 from src.config import ENDPOINT_HOST, ENDPOINT_PORT
 from src.sql import Database
@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.INFO)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "https://garage-sale.cz"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"], 
@@ -36,6 +36,10 @@ app.add_middleware(
 async def root() -> dict:
     return {"message": "Oops, you are not supposed to be here"}
 
+"""
+    * THIS SECTION IS MAYBE WILL BE DEPRECATED AND MIGRATED TO WEBSOCKETS
+"""
+#------------------- CHAT -------------------#
 @app.post('/api/v1.0/chat/create')
 async def create_chat(chat: Chat) -> int:
     res = db.create_chat(**chat.dict())
@@ -87,6 +91,101 @@ async def update_message(message: ChatMessageUpdate) -> bool:
     if db.update_message(**message.dict()):
         return True
     raise HTTPException(status_code=500, detail='Server error')
+
+#------------------- CHAT END -------------------#
+
+"""
+    * THIS SECTION IS MAYBE WILL BE REPLACED OLD CHAT SECTION
+"""
+#------------------- NEW_CHAT -------------------#
+
+activeSockets = [{}]
+
+@app.websocket('/api/v1.0/new/chat')
+async def chat(websocket: WebSocket) -> None:
+    try:
+        await websocket.accept()
+        is_authorized = False
+        while True:
+            data = await websocket.receive_json()
+            if not is_authorized:
+                user_id = data.get('user_id')
+                vKey = data.get('vKey')
+                if db.check_validation_key(user_id, vKey):
+                    is_authorized = True
+
+                    if {'user_id': user_id, 'vKey': vKey, 'websocket': websocket} not in activeSockets:
+                        activeSockets.append({'user_id': user_id, 'vKey': vKey, 'websocket': websocket})
+
+                    await websocket.send_json({'type' : 'system', 'message': 'Authorized'})
+                else:
+                    await websocket.send_json({'type' : 'system', 'message': 'Unauthorized'})
+                    await websocket.close()
+
+            if is_authorized:
+                if data.get('action') == 'get_messages':
+                    messages = db.get_messages(data.get('chat_id'), data.get('user_id'), data.get('vKey'))
+                    if messages is not None:
+                        await websocket.send_json({'type' : 'messages', 'messages': messages})
+                    else:
+                        await websocket.send_json({'type' : 'system', 'status': 'NOK', 'message': 'Server error'})
+                        await websocket.close()
+
+                elif data.get('action') == 'send_message':
+                    if db.create_message(data.get('chat_id'), data.get('message'), 
+                                         data.get('timestamp'), data.get('author_id'), data.get('vKey')):
+                        await websocket.send_json({'type' : 'system', 'status': 'OK'})
+                        messages = db.get_messages(data.get('chat_id'), data.get('user_id'), data.get('vKey'))
+                        for user in activeSockets:
+                            if user.get('user_id') == data.get('author_id') and user.get('vKey') == data.get('vKey'):
+                                await user.get('websocket').send_json({'type' : 'messages', 'messages': messages})
+                    else:
+                        await websocket.send_json({'type' : 'system', 'status': 'NOK', 'message': 'Server error'})
+                        # await websocket.close()
+
+                elif data.get('action') == 'edit_message':
+                    if db.update_message(data.get('message_id'), data.get('message'), data.get('user_id'), data.get('vKey')):
+                        await websocket.send_json({'type' : 'system', 'status': 'OK'})
+                    else:
+                        await websocket.send_json({'type' : 'system', 'status': 'NOK', 'message': 'Server error'})
+                        # await websocket.close()
+
+                elif data.get('action') == 'delete_message':
+                    if db.delete_message(data.get('message_id'), data.get('user_id'), data.get('vKey')):
+                        await websocket.send_json({'message': 'Message deleted'})
+                    else:
+                        await websocket.send_json({'type' : 'system', 'status': 'NOK', 'message': 'Server error'})
+                        # await websocket.close()
+
+    except WebSocketDisconnect:
+        await websocket.close()     
+
+@app.websocket('/api/v1.0/new/chats')
+async def user_chats(websocket: WebSocket) -> None:
+    try:
+        await websocket.accept()
+        is_authorized = False
+        while True:
+            data = await websocket.receive_json()
+            if not is_authorized:
+                user_id = data.get('user_id')
+                vKey = data.get('vKey')
+                if db.check_validation_key(user_id, vKey):
+                    is_authorized = True
+
+                    if {'user_id': user_id, 'vKey': vKey, 'websocket': websocket} not in activeSockets:
+                        activeSockets.append({'user_id': user_id, 'vKey': vKey, 'websocket': websocket})
+
+                    await websocket.send_json({'type' : 'chats', 'chats': db.get_chats(user_id, vKey)})
+                else:
+                    await websocket.send_json({'type' : 'system', 'message': 'Unauthorized'})
+                    await websocket.close()
+
+            if is_authorized:
+                pass
+
+    except WebSocketDisconnect:
+        await websocket.close()
 
 @app.post('/api/v1.0/image/upload')
 async def upload_image(image: UploadFile = None) -> dict:
@@ -230,4 +329,4 @@ async def update_item(item: ItemUpdate) -> bool:
 
 
 def run():
-    uvicorn.run(app, host=ENDPOINT_HOST, port=ENDPOINT_PORT)
+    uvicorn.run(app, host=ENDPOINT_HOST, port=ENDPOINT_PORT, log_level='info')

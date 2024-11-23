@@ -4,3 +4,5 @@ bcrypt
 python-multipart 
 requests
 mysql-connector-python
+websockets
+asyncio

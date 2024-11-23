@@ -101,7 +101,7 @@ const ItemsList: React.FC = () => {
         
         const interval = setInterval(() => {
             fetchItems(categoryId);
-        }, 3000); 
+        }, 30000); 
 
         return () => clearInterval(interval);
     }

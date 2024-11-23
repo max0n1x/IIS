@@ -7,7 +7,7 @@
  * @author Maksym Podhornyi - xpodho08
 */
 
-import React, {useEffect, useRef, useState } from "react";
+import React, {useEffect, useRef, useState, startTransition } from "react";
 import { useNavigate } from "react-router-dom";
 import { fixElementHeight, checkLogin, Header, GetUserInformation, API_BASE_URL } from "../Utils";
 import user_svg from "../images/user.svg";
@@ -119,7 +119,7 @@ const UserPage: React.FC = () => {
         const cookies = document.cookie.split(';');
 
         if(!cookies){
-            navigate('/login');
+            startTransition(() => { navigate('/login'); });
             return;
         }
 
@@ -127,7 +127,7 @@ const UserPage: React.FC = () => {
         const vKey = cookies.find(cookie => cookie.includes('vKey'));
 
         if(!userId || !vKey){
-            navigate('/login');
+            startTransition(() => { navigate('/login'); });
             return;
         }
 
@@ -158,7 +158,7 @@ const UserPage: React.FC = () => {
             setError("Failed to connect to the server");
         }
 
-        navigate('/');
+        startTransition(() => { navigate('/'); });
     }
     
     const handleDoneClick = async () => {
@@ -166,7 +166,7 @@ const UserPage: React.FC = () => {
         const cookies = document.cookie.split(';');
 
         if(!cookies){
-            navigate('/login');
+            startTransition(() => { navigate('/login'); });
             return;
         }
 
@@ -174,7 +174,7 @@ const UserPage: React.FC = () => {
         const vKey = cookies.find(cookie => cookie.includes('vKey'));
 
         if(!userId || !vKey){
-            navigate('/login');
+            startTransition(() => { navigate('/login'); });
             return;
         }
 
@@ -243,7 +243,7 @@ const UserPage: React.FC = () => {
     
         checkLogin(loggedIn, logInRef).then((result) => {
             if (!result) {
-                navigate('/login');
+                startTransition(() => { navigate('/login'); });
                 return;
             }
             
@@ -252,41 +252,6 @@ const UserPage: React.FC = () => {
             }
         }
         );
-
-        GetUserInformation().then((user) => {
-            if(!user) {
-                navigate('/login');
-                return;
-            } else {
-                const updatedUserData = {
-                    name: user.name ?? "",
-                    surname: user.surname ?? "",
-                    email: user.email ?? "",
-                    phone: user.phone ?? "",
-                    address: user.address ?? "",
-                    date_of_birth: user.date_of_birth ?? "",
-                };
-        
-                setUserData(updatedUserData);
-
-            }
-        }
-        );  
-
-        const cookies = document.cookie.split(';');
-
-        if(!cookies){
-            navigate('/login');
-            return;
-        }
-
-        const userId = cookies.find(cookie => cookie.includes('user_id'));
-        const vKey = cookies.find(cookie => cookie.includes('vKey'));
-
-        if(!userId || !vKey){
-            navigate('/login');
-            return;
-        }
 
         const fetchItems = async (user_id : string, vKey : string) => {
             const response = await fetch(API_BASE_URL + "/user/items", {
@@ -304,13 +269,43 @@ const UserPage: React.FC = () => {
             }
             setItems(data);
         }
+
+        const cookies = document.cookie.split(';');
+
+        if(!cookies){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const userId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
         
         if(userId && vKey){
             fetchItems(userId.split('=')[1], vKey.split('=')[1]);
         } else {
-            navigate('/login');
+            startTransition(() => { navigate('/login'); });
             return;
         }
+
+        GetUserInformation().then((user) => {
+            if(!user) {
+                startTransition(() => { navigate('/login'); });
+                return;
+            } else {
+                const updatedUserData = {
+                    name: user.name ?? "",
+                    surname: user.surname ?? "",
+                    email: user.email ?? "",
+                    phone: user.phone ?? "",
+                    address: user.address ?? "",
+                    date_of_birth: user.date_of_birth ?? "",
+                };
+        
+                setUserData(updatedUserData);
+
+            }
+        }
+        );  
 
         if(action_id === "add"){
             setImportantMsg("Item added successfully");
@@ -324,17 +319,17 @@ const UserPage: React.FC = () => {
             setImportantMsg(false);
         }, 2000);  
 
-        const interval = setInterval(() => {
-            fetchItems(userId.split('=')[1], vKey.split('=')[1]);
-        }
-        , 3000);
-
         return () => {
-            clearInterval(interval);
             clearTimeout(timer);
         }
     }
     , [navigate, action_id]);
+
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        url.search = '';
+        window.history.replaceState({}, document.title, url.toString());
+    }, []);
 
     return(
 

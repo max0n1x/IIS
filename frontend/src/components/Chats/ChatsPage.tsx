@@ -7,7 +7,7 @@
  * @author Maksym Podhornyi - xpodho08
 */
 
-import React, {useEffect, useRef, useState, useCallback } from "react";
+import React, {useEffect, useRef, useState, useCallback, startTransition } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { fixElementHeight, checkLogin, Header, API_BASE_URL, GetItem } from "../Utils";
 import user_svg from "../images/user.svg";
@@ -16,7 +16,6 @@ import sendIcon from "../images/ArrowCircleRight.svg";
 import "../GlobalStyles.css";
 import trashBin from "../images/trashbin.svg";
 import editMessage from "../images/EditMessage.svg"
-import { CodeGen } from "ajv";
 
 const ChatsPage: React.FC = () => {
     const headerRef = useRef<HTMLDivElement>(null);
@@ -43,6 +42,9 @@ const ChatsPage: React.FC = () => {
     const [error, setError] = useState('');
 
     const fetchInterval = useRef<number | NodeJS.Timeout | null>(null);
+
+    const messageSocket = useRef<WebSocket | null>(null);
+    const chatsSocket = useRef<WebSocket | null>(null);
 
     const location = useLocation();
 
@@ -74,7 +76,7 @@ const ChatsPage: React.FC = () => {
         const cookie = document.cookie.split(';').find(cookie => cookie.includes('user_id'));
 
         if (!cookie) {
-            navigate('/login');
+            startTransition(() => navigate('/login'));
             return;
         }
 
@@ -82,7 +84,7 @@ const ChatsPage: React.FC = () => {
     
 
         if (cookie === undefined) {
-            navigate('/login');
+            startTransition(() => navigate('/login'));
             return;
         }
 
@@ -114,7 +116,7 @@ const ChatsPage: React.FC = () => {
         const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
 
         if (!user_id || !vKey) {
-            navigate('/login');
+            startTransition(() => navigate('/login'));
             return;
         }
 
@@ -136,7 +138,6 @@ const ChatsPage: React.FC = () => {
                 clearInterval(fetchInterval.current as number | NodeJS.Timeout);
             }
 
-            await fetchChats();
         } else {
             setError(result.message);
         }
@@ -154,7 +155,7 @@ const ChatsPage: React.FC = () => {
         const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
 
         if (!user_id || !vKey) {
-            navigate('/login');
+            startTransition(() => navigate('/login'));
             return;
         }
 
@@ -179,6 +180,7 @@ const ChatsPage: React.FC = () => {
 
     const handleEditMessage = async(event : React.MouseEvent) => {
         event.preventDefault();
+
         const message_id = (event.target as HTMLImageElement).parentNode ? 
                 ((event.target as HTMLImageElement).parentNode as HTMLDivElement).getAttribute('data-message-id') : null;
 
@@ -224,7 +226,7 @@ const ChatsPage: React.FC = () => {
         }
 
         if (!user_from || !vKey) {
-            navigate('/login');
+            startTransition(() => navigate('/login'));
             return;
         }
 
@@ -248,17 +250,7 @@ const ChatsPage: React.FC = () => {
                 vKey: vKey
             }
 
-            const response = await fetch(API_BASE_URL + "/message/update", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data),
-            });
-
-            await response.json();
-
-            await fetchMessages(chat_id);
+            if (chatsSocket.current) chatsSocket.current.send(JSON.stringify({action: 'edit_message', message_id: messageId, message: message, user_id: user_from, vKey: vKey}));
 
             setMessage("");
             setIsEditing(false);
@@ -267,32 +259,22 @@ const ChatsPage: React.FC = () => {
             return;
         } else {
 
-
             const data = {
+                action : 'send_message',
                 message: message,
-                user_from: user_from,
-                date: timestamp,
+                timestamp: timestamp,
                 chat_id: chat_id,
                 author_id: user_from,
                 vKey: vKey
             }
 
-            const response = await fetch(API_BASE_URL + "/message/create", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data),
-            });
-
-            await response.json();
+            if (messageSocket.current) messageSocket.current.send(JSON.stringify(data));
 
             setMessage("");
 
-            await fetchMessages(chat_id);
-
             return;
         }
+
     }
 
     const fetchMessages = useCallback(async(chat_id : string | undefined) => {
@@ -305,7 +287,7 @@ const ChatsPage: React.FC = () => {
         const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
 
         if (!user_id || !vKey) {
-            navigate('/login');
+            startTransition(() => navigate('/login'));
             return;
         }
 
@@ -325,6 +307,25 @@ const ChatsPage: React.FC = () => {
         }
 
         setMessages(messages.reverse());
+    } , [navigate]);
+
+    const testfetchMessages = useCallback(async(data : any) => {
+
+        const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+        const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
+
+        if (!user_id || !vKey) {
+            startTransition(() => navigate('/login'));
+            return;
+        }
+
+        const messages: Message[] = [];
+        for (const message of data) {
+            messages.push({message: message.message, user_from: message.user_from, id: message.message_id});
+        }
+
+        setMessages(messages.reverse());
+
     } , [navigate]);
 
     const openChat = useCallback(async(event?: React.MouseEvent<HTMLDivElement> | null | boolean, chat_id?: string, item_id?: string) => {
@@ -370,23 +371,28 @@ const ChatsPage: React.FC = () => {
         }
         );
 
-        await fetchMessages(chat_id);
+        const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+        const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
 
-        if (fetchInterval.current) {
-            clearInterval(fetchInterval.current as number | NodeJS.Timeout);
+        if (!user_id || !vKey) {
+            startTransition(() => navigate('/login'));
+            return;
         }
 
-        fetchInterval.current = setInterval(async() => {
-            await fetchMessages(chat_id);
+        if (chat_id && messageSocket.current)
+            messageSocket.current.send(JSON.stringify({action : 'get_messages', chat_id: chat_id, user_id: user_id, vKey: vKey}));
+
+        if (chat_id) {
+            setChatId(chat_id);
         }
-        , 2000);
 
-    }, [fetchMessages]);
+    }, []);
 
-    const fetchChats = useCallback(async() => {
+    const testfetchChats = useCallback(async(data : any) => {
         const cookies = document.cookie.split(';');
+        
         if (!cookies) {
-            navigate('/login');
+            startTransition(() => navigate('/login'));
             return;
         }
 
@@ -394,19 +400,10 @@ const ChatsPage: React.FC = () => {
         const vKey = cookies.find(cookie => cookie.includes('vKey'));
 
         if(!user || !vKey) {
-            navigate('/login');
+            startTransition(() => navigate('/login'));
             return;
         }
 
-        const response = await fetch(API_BASE_URL + "/user/chats", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({user_id: parseInt(user.split('=')[1]), vKey: vKey.split('=')[1]})
-        });
-
-        const data = await response.json();
         const newChats: Chat[] = [];
 
         const validChatIds = new Set(data.map((chat: any) => chat.chat_id));
@@ -448,7 +445,6 @@ const ChatsPage: React.FC = () => {
     useEffect(() => {
 
         if (chatContainer.current && emptyChatContainer.current) {
-            console.log("blya");
             emptyChatContainer.current.style.display = "flex";
             chatContainer.current.style.display = "none";
         }
@@ -456,17 +452,93 @@ const ChatsPage: React.FC = () => {
     } , []);
 
     useEffect(() => {
+        messageSocket.current = new WebSocket(API_BASE_URL + "/new/chat");
 
-        const chatsUpdate = setInterval(async() => {
-            await fetchChats();
+        messageSocket.current.onopen = () => {
+            const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+            const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
+
+            if (!user_id || !vKey) {
+                startTransition(() => navigate('/login'));
+                return;
+            }
+            
+            if (messageSocket.current) messageSocket.current.send(JSON.stringify({user_id: user_id, vKey: vKey}));
+        };
+
+        messageSocket.current.onmessage = async(event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'system') {
+                if (data.message === 'Unauthorized') {
+                    startTransition(() => navigate('/login'));
+                } else if (data.status === 'NOK') {
+                    setError('An error occurred');
+                }
+            } else if (data.type === 'messages') {
+                await testfetchMessages(data.messages);
+            }
         }
-        , 2000);
 
         return () => {
-            clearInterval(chatsUpdate);
+            if (messageSocket.current) {
+                messageSocket.current.close();
+            }
         }
 
-    } , [fetchChats]);
+    } , [navigate]);
+
+    useEffect(() => {
+        chatsSocket.current = new WebSocket(API_BASE_URL + "/new/chats");
+
+        chatsSocket.current.onopen = () => {
+            const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+            const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
+
+            if (!user_id || !vKey) {
+                startTransition(() => navigate('/login'));
+                return;
+            }
+
+            if (chatsSocket.current) chatsSocket.current.send(JSON.stringify({user_id: user_id, vKey: vKey}));
+        };
+
+        chatsSocket.current.onmessage = async(event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'system') {
+
+                if (data.message === 'Unauthorized') {
+                    startTransition(() => navigate('/login'));
+                } else if (data.message === 'NOK') {
+                    setError('An error occurred');
+                }
+
+            } else if (data.type === 'chats') {
+
+                await testfetchChats(data.chats);
+
+            }
+        }
+
+        return () => {
+            if (chatsSocket.current) {
+                chatsSocket.current.close();
+            }
+        }
+
+    } , [navigate]);
+
+    // useEffect(() => {
+
+    //     const chatsUpdate = setInterval(async() => {
+    //         await fetchChats();
+    //     }
+    //     , 2000);
+
+    //     return () => {
+    //         clearInterval(chatsUpdate);
+    //     }
+
+    // } , [fetchChats]);
 
     useEffect(() => {
         if (headerRef.current) {
@@ -476,7 +548,7 @@ const ChatsPage: React.FC = () => {
         const verifyLoginStatus = async () => {
             await checkLogin(loggedIn, logInRef).then((result) => {
                 if (!result) {
-                    navigate('/login');
+                    startTransition(() => navigate('/login'));
                 }
             });
         };
@@ -492,16 +564,12 @@ const ChatsPage: React.FC = () => {
 
         if (chat_id && item_id) {
             openChat(null, chat_id, item_id);
-            navigate('/user/chats');
-        }
-
-        return () => {
-            if (fetchInterval.current) {
-                clearInterval(fetchInterval.current);
-            }
+            const url = new URL(window.location.href);
+            url.search = '';
+            window.history.replaceState({}, document.title, url.toString());
         }
     }
-    , [fetchInterval, location, openChat, chat_id, item_id]);
+    , [location, openChat, chat_id, item_id, navigate]);
 
     return(
 

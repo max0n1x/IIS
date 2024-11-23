@@ -53,8 +53,9 @@ const LoginPage: React.FC = () => {
         if (elementRef.current) {
             fixElementHeight(elementRef.current);
         }
-    }, []);
 
+    }, [navigate]);
+    
     function handleInput() {
         const input = document.getElementById('password') as HTMLInputElement | null;
         if (input) {

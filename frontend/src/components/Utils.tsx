@@ -39,9 +39,11 @@ export const fixElementWidth = (element: HTMLElement | null): void => {
 // Function to check if a user is logged in by examining cookies.
 export const ifUserLoggedIn = async () => {
     const cookies = document.cookie.split(';');
+
     if (!cookies) {
-        return false;
+        return null;
     }
+    
     const userId = cookies.find(cookie => cookie.includes('user_id'));
     const vKey = cookies.find(cookie => cookie.includes('vKey'));
 
@@ -58,19 +60,19 @@ export const ifUserLoggedIn = async () => {
                     vKey: vKey.split('=')[1]
                 }),
             });
-            
+
             if (response.ok) {
                 const userData = await response.json();
                 return userData.username;
             } else {
-                return false;
+                return null;
             }
         } catch (error) {
             console.error('Error:', error);
-            return false;
+            return null;
         }
     }
-    return false;
+    return null;
 }
 
 export const checkLogin = async (
@@ -82,7 +84,7 @@ export const checkLogin = async (
         console.warn("Logged-in or login elements are not defined.");
         return false;
     }
-    
+
     try {
         const username = await ifUserLoggedIn();
 
@@ -119,7 +121,7 @@ export const checkLogin = async (
                     console.error('Unauthorized access log failed:', response.status, response.statusText);
                 } else {
                     console.info('Unauthorized access successfully logged.');
-                    document.cookie = 'unauthorized=true; path=/';
+                    document.cookie = 'unauthorized=true; path=/, SameSite=None; Secure';
                 }
 
                 return false;
@@ -255,7 +257,7 @@ export const GetUserInformation = async () => {
 
     try {
         // Fetching user data from the server.
-        const response = await fetch(API_BASE_URL + "/user/", {
+        const response = await fetch(API_BASE_URL + "/user", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

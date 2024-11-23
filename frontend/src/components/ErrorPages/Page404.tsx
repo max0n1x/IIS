@@ -1,5 +1,5 @@
 /*
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file Page404.js
 
  * @brief ReactJS component of the 404 page of the website

@@ -1,5 +1,5 @@
 /*
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file AddItemPage.js
 
  * @brief ReactJS component of the page for adding new item

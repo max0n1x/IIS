@@ -1,5 +1,5 @@
 """
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file run.py
 
  * @brief file for running api

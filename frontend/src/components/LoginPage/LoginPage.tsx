@@ -1,5 +1,5 @@
 /*
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file LoginPage.js
 
  * @brief ReactJS component of the login page of the website
@@ -55,7 +55,7 @@ const LoginPage: React.FC = () => {
         }
 
     }, [navigate]);
-    
+
     function handleInput() {
         const input = document.getElementById('password') as HTMLInputElement | null;
         if (input) {

@@ -1,5 +1,5 @@
 /*
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file ChatsPage.js
 
  * @brief ReactJS component of the chats page of the website

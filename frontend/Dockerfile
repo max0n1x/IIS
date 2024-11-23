@@ -1,4 +1,4 @@
-# Project: ITU project - Garage sale website
+# Project: IIS project - Garage sale website
 
 # @file Dockerfile
 

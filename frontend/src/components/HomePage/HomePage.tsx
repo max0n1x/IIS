@@ -1,5 +1,5 @@
 /*
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file HomePage.js
 
  * @brief ReactJS component of the main page of the website

@@ -1,5 +1,5 @@
 """
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file crypto.py
 
  * @brief cryptography class for api

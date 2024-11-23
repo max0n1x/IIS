@@ -1,6 +1,6 @@
-# ITU2023
+# IIS2023
 
-ITU project in Brno University of Technology 23/24
+IIS project in Brno University of Technology 23/24
 
 ## Team:
 - [**Maksym Podhornyi(xpodho08)**](https://github.com/max0n1x)

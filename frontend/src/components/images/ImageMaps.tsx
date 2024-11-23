@@ -1,5 +1,5 @@
 /*
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file ImageMaps.tsx
 
  * @brief ReactJS component for image maps (used in HomePage.tsx)

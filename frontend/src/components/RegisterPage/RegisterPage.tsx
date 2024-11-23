@@ -1,5 +1,5 @@
 /*
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file RegisterPage.js
 
  * @brief ReactJS component of the register page of the website
@@ -43,7 +43,7 @@ const RegisterPage: React.FC = () => {
         if (headerRef.current) {
             fixElementHeight(headerRef.current);
         }
-        
+
     }, []);
 
     const handleRegister = async () => {

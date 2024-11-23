@@ -1,5 +1,5 @@
 /*
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file App.js
 
  * @brief root ReactJS component of the website(routing)

@@ -1,5 +1,5 @@
 """
- * Project: ITU project - Garage sale website
+ * Project: IIS project - Garage sale website
  * @file sqlite.py
 
  * @brief sqlite database class for api

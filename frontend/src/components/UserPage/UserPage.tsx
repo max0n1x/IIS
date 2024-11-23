@@ -236,6 +236,49 @@ const UserPage: React.FC = () => {
         }
     };
 
+    const handleDeleteClick = async () => {
+        if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+            return; // User canceled the confirmation dialog.
+        }
+    
+        const cookies = document.cookie.split(';');
+        const userId = cookies.find(cookie => cookie.includes('user_id'))?.split('=')[1];
+        const vKey = cookies.find(cookie => cookie.includes('vKey'))?.split('=')[1];
+    
+        if (!userId || !vKey) {
+            setImportantMsg("Unable to verify your account. Please log in again.");
+            navigate('/login');
+            return;
+        }
+    
+        const data = {
+            user_id: userId,
+            vKey: vKey,
+        };
+    
+        try {
+            const response = await fetch(`${API_BASE_URL}/user/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+    
+            if (response.ok) {
+                alert("Your account has been successfully deleted.");
+                document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "vKey=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                navigate('/');
+            } else {
+                const errorMsg = await response.text();
+                setImportantMsg(`Failed to delete account: ${errorMsg}`);
+            }
+        } catch (error) {
+            console.error("Error deleting account:", error);
+            setImportantMsg("An error occurred while deleting your account. Please try again.");
+        }
+    };
+    
+
     useEffect(() => {
         if (headerRef.current) {
             fixElementHeight(headerRef.current);
@@ -394,6 +437,7 @@ const UserPage: React.FC = () => {
 
                 <input type="submit" value="DONE" className={UserPageStyles["submit-button"]} onClick = {handleDoneClick} />
                 <input type="submit" value="Log out" className={UserPageStyles["log-out-button"]} onClick = {handleLogOutClick} />
+                <input type="button" value="Delete account" className={UserPageStyles["delete-button"]} onClick = {handleDeleteClick} />
                 <Link to = "/user/add-item" className={UserPageStyles["add-item-button"]}>ADD ITEM</Link>
                 <Link to = "/user/chats" className={UserPageStyles["chat-button"]}>CHATS</Link>
 

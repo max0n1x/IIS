@@ -24,7 +24,7 @@ pipeline {
                 script {
                     if (env.DEPLOY == 'false') {
                         currentStage = 'Verification'
-                        error("Deployment is disabled.")
+                        currentBuild.result = 'SUCCESS'
                     }
                     
                 }
@@ -38,6 +38,10 @@ pipeline {
         }
 
         stage('Package') {
+            when {
+                expression { env.DEPLOY == 'true' }
+            }
+
             steps {
                 dir('.') {
                     script {
@@ -54,6 +58,10 @@ pipeline {
         }
 
         stage('Deploy to Remote Host') {
+            when {
+                expression { env.DEPLOY == 'true' }
+            }
+
             steps {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     script {
@@ -73,6 +81,10 @@ pipeline {
         }
 
         stage('Verify Deployment') {
+            when {
+                expression { env.DEPLOY == 'true' }
+            }
+
             steps {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     script {
@@ -94,12 +106,64 @@ pipeline {
     
     post {
         success {
+            script {
+                if (currentStage == 'Verification') {
+                    emailext (
+                        subject: "Deployment Disabled in Jenkins: ${currentBuild.fullDisplayName}",
+                        body: """
+                            <html>
+                            <body>
+                                <p><strong style="color: gray;">Deployment was disabled.</strong></p>
+                                <p>Check details here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                                <ul>
+                                    <li><strong>Build Number:</strong> ${currentBuild.number}</li>
+                                    <li><strong>Started by:</strong> ${currentBuild.getBuildCauses().collect { it.shortDescription }.join(', ')}</li>
+                                    <li><strong>Timestamp:</strong> ${new Date(currentBuild.startTimeInMillis).format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("UTC"))} UTC</li>
+                                    <li><strong>Workspace:</strong> ${env.WORKSPACE}</li>
+                                </ul>
+                            </body>
+                            </html>
+                        """,
+                        mimeType: 'text/html',
+                        recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+                    )
+                    echo "Deployment was disabled."
+                } else {
+                    emailext (
+                        subject: "Build Success in Jenkins: ${currentBuild.fullDisplayName}",
+                        body: """
+                            <html>
+                            <body>
+                                <p><strong style="color: green;">Deployment was successful.</strong></p>
+                                <p>Check details here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                                <ul>
+                                    <li><strong>Duration:</strong> ${currentBuild.durationString}</li>
+                                    <li><strong>Build Number:</strong> ${currentBuild.number}</li>
+                                    <li><strong>Status:</strong> ${currentBuild.result}</li>
+                                    <li><strong>Started by:</strong> ${currentBuild.getBuildCauses().collect { it.shortDescription }.join(', ')}</li>
+                                    <li><strong>Timestamp:</strong> ${new Date(currentBuild.startTimeInMillis).format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("UTC"))} UTC</li>
+                                    <li><strong>Workspace:</strong> ${env.WORKSPACE}</li>
+                                    <li><strong>Node:</strong> ${env.NODE_NAME}</li>
+                                </ul>
+                            </body>
+                            </html>
+                        """,
+                        mimeType: 'text/html',
+                        recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+                    )
+                    echo "Deployment was successful."
+                }
+            }
+        }
+
+        failure {
+
             emailext (
-                subject: "Build Success in Jenkins: ${currentBuild.fullDisplayName}",
+                subject: "Build Failed in Jenkins: ${currentBuild.fullDisplayName} on the ${currentStage} stage",
                 body: """
                     <html>
                     <body>
-                        <p><strong style="color: green;">Deployment was successful.</strong></p>
+                        <p><strong style="color: red;">Pipeline failed in the <em>${currentStage}</em> stage.</strong></p>
                         <p>Check details here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
                         <ul>
                             <li><strong>Duration:</strong> ${currentBuild.durationString}</li>
@@ -116,62 +180,9 @@ pipeline {
                 mimeType: 'text/html',
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
-            echo "Deployment was successful."
-        }
+            cleanup()
+            echo "Deployment failed."
 
-        failure {
-            script {
-                if (currentStage == 'Verification') {
-                    emailext (
-                        subject: "Deployment Disabled in Jenkins: ${currentBuild.fullDisplayName}",
-                        body: """
-                            <html>
-                            <body>
-                                <p><strong style="color: red;">Deployment was disabled.</strong></p>
-                                <p>Check details here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                                <ul>
-                                    <li><strong>Duration:</strong> ${currentBuild.durationString}</li>
-                                    <li><strong>Build Number:</strong> ${currentBuild.number}</li>
-                                    <li><strong>Status:</strong> ${currentBuild.result}</li>
-                                    <li><strong>Started by:</strong> ${currentBuild.getBuildCauses().collect { it.shortDescription }.join(', ')}</li>
-                                    <li><strong>Timestamp:</strong> ${new Date(currentBuild.startTimeInMillis).format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("UTC"))} UTC</li>
-                                    <li><strong>Workspace:</strong> ${env.WORKSPACE}</li>
-                                    <li><strong>Node:</strong> ${env.NODE_NAME}</li>
-                                </ul>
-                            </body>
-                            </html>
-                        """,
-                        mimeType: 'text/html',
-                        recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-                    )
-                    echo "Deployment was disabled."
-                } else {
-                    emailext (
-                        subject: "Build Failed in Jenkins: ${currentBuild.fullDisplayName} on the ${currentStage} stage",
-                        body: """
-                            <html>
-                            <body>
-                                <p><strong style="color: red;">Pipeline failed in the <em>${currentStage}</em> stage.</strong></p>
-                                <p>Check details here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                                <ul>
-                                    <li><strong>Duration:</strong> ${currentBuild.durationString}</li>
-                                    <li><strong>Build Number:</strong> ${currentBuild.number}</li>
-                                    <li><strong>Status:</strong> ${currentBuild.result}</li>
-                                    <li><strong>Started by:</strong> ${currentBuild.getBuildCauses().collect { it.shortDescription }.join(', ')}</li>
-                                    <li><strong>Timestamp:</strong> ${new Date(currentBuild.startTimeInMillis).format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("UTC"))} UTC</li>
-                                    <li><strong>Workspace:</strong> ${env.WORKSPACE}</li>
-                                    <li><strong>Node:</strong> ${env.NODE_NAME}</li>
-                                </ul>
-                            </body>
-                            </html>
-                        """,
-                        mimeType: 'text/html',
-                        recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-                    )
-                    cleanup()
-                    echo "Deployment failed."
-                }
-            }
         }
 
         aborted {

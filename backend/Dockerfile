@@ -1,4 +1,4 @@
-FROM python
+FROM python:3.10.6-slim
 
 EXPOSE 8080
 

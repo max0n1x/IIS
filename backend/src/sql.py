@@ -467,8 +467,6 @@ class Database:
         
     def delete_user(self, user_id : int) -> bool:
 
-
-        
         try:
                 
             cursor = self.conn.cursor()
@@ -530,10 +528,10 @@ class Database:
         """ get a single chat """
 
         if not self.check_validation_key(user_id, vKey):
-            raise HTTPException(status_code=401, detail='Unauthorized')
+            return {}
         
         if not self.get_user(user_id, vKey):
-            raise HTTPException(status_code=404, detail='User not found')
+            return {}
         
         try:
 
@@ -642,12 +640,6 @@ class Database:
     
     def get_messages(self, chat_id: int, user_id: int, vKey: str) -> list:
         """ get all messages for a chat """
-
-        # if not self.check_validation_key(user_id, vKey):
-        #     raise HTTPException(status_code=401, detail='Unauthorized')
-        
-        # if not self.get_chat(chat_id, user_id, vKey):
-        #     raise HTTPException(status_code=404, detail='Chat not found')
         
         try:
 
@@ -670,7 +662,7 @@ class Database:
         """ delete a single message """
         
         if not self.check_validation_key(user_id, vKey):
-            raise HTTPException(status_code=401, detail='Unauthorized')
+            return False
         
         try:
 
@@ -679,7 +671,10 @@ class Database:
             cursor.execute('SELECT user_from FROM messages WHERE message_id = %s', (message_id,))
             row = cursor.fetchone()
 
-            if row[0] != user_id:
+            if not row:
+                return False
+
+            if row[0] != int(user_id):
                 return False
 
             cursor.execute('DELETE FROM messages WHERE message_id = %s', (message_id,))

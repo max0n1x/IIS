@@ -44,7 +44,7 @@ const RegisterPage: React.FC = () => {
             fixElementHeight(headerRef.current);
         }
 
-    }, []);
+    }, [navigate]);
 
     const handleRegister = async () => {
 

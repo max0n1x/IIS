@@ -222,8 +222,8 @@ const EditItemPage: React.FC = () => {
                     setError("Server error");
                     target.disabled = false;
                 } else {
-                    throw new Error('Something went wrong');
                     target.disabled = false;
+                    throw new Error('Something went wrong');
                 }
 
             } catch (error) {

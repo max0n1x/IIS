@@ -61,6 +61,13 @@ const ChatsPage: React.FC = () => {
         item_name: string;
     }
 
+    const showError = (message: string) => {
+        setError(message);
+        setTimeout(() => {
+            setError('');
+        }, 2000);
+      };
+
     const addChat = (username : string, item_name : string, chat_id : string, item_id : string) => {
         return (
             <div className={ChatsPageStyles['one-chat-container']} key = {chat_id} onClick={openChat} id = {chat_id}
@@ -159,23 +166,26 @@ const ChatsPage: React.FC = () => {
             return;
         }
 
-        const response = await fetch(API_BASE_URL + "/message/delete", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({message_id: message_id, author_id: user_id, vKey: vKey})
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            if (chatHeader.current) {
-                await fetchMessages(chatHeader.current.dataset.chatId);
-            }
-        } else {
-            setError(result.message);
+        if (!message_id) {
+            return;
         }
+
+        const chat_id = chatHeader.current ? chatHeader.current.dataset.chatId : null;
+
+        if (!chat_id) {
+            return;
+        }
+
+        const data = {
+            action: 'delete_message',
+            message_id: message_id,
+            user_id: user_id,
+            vKey: vKey,
+            chat_id: chat_id
+        }
+
+        if (messageSocket.current) messageSocket.current.send(JSON.stringify(data));
+
     }
 
     const handleEditMessage = async(event : React.MouseEvent) => {
@@ -279,39 +289,7 @@ const ChatsPage: React.FC = () => {
 
     }
 
-    const fetchMessages = useCallback(async(chat_id : string | undefined) => {
-
-        if (!chat_id) {
-            return;
-        }
-
-        const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
-        const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
-
-        if (!user_id || !vKey) {
-            startTransition(() => navigate('/login'));
-            return;
-        }
-
-        const response = await fetch(API_BASE_URL + "/chat/messages", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({chat_id: chat_id, user_id: user_id, vKey: vKey})
-        });
-
-        const data = await response.json();
-
-        const messages: Message[] = [];
-        for (const message of data) {
-            messages.push({message: message.message, user_from: message.user_from, id: message.message_id});
-        }
-
-        setMessages(messages.reverse());
-    } , [navigate]);
-
-    const testfetchMessages = useCallback(async(data : any) => {
+    const fetchMessages = useCallback(async(data : any) => {
 
         const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
         const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
@@ -329,8 +307,57 @@ const ChatsPage: React.FC = () => {
         setMessages(messages.reverse());
 
     } , [navigate]);
+
+    const setupWebSocket = useCallback(async() => {
+
+        messageSocket.current = new WebSocket(API_BASE_URL + "/new/chat");
+
+        messageSocket.current.onopen = async() => {
+            const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+            const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
+
+            if (!user_id || !vKey) {
+                startTransition(() => navigate('/login'));
+                return;
+            }
+            
+            while (messageSocket.current?.readyState !== WebSocket.OPEN) {
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+
+            if (chat_id && messageSocket.current) {
+                messageSocket.current.send(JSON.stringify({action : 'get_messages', chat_id: chat_id, user_id: user_id, vKey: vKey}));
+            }
+        };
+
+        messageSocket.current.onmessage = async(event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'system') {
+                if (data.message === 'Unauthorized') {
+                    startTransition(() => navigate('/login'));
+                } else if (data.status === 'NOK') {
+                    showError('An error occurred');
+                }
+            } else if (data.type === 'messages') {
+                await fetchMessages(data.messages);
+            }
+        }
+
+        messageSocket.current.onclose = () => {
+            showError('Connection closed by server');
+
+            setupWebSocket();
+        }
+        
+    }, [navigate, chat_id, fetchMessages]);
 
     const openChat = useCallback(async(event?: React.MouseEvent<HTMLDivElement> | null | boolean, chat_id?: string, item_id?: string) => {
+
+        if (messageSocket.current) {
+            messageSocket.current.close();
+        }
+
+        await setupWebSocket();
         
         if (emptyChatContainer.current && chatContainer.current) {
             emptyChatContainer.current.style.display = "none";
@@ -381,16 +408,21 @@ const ChatsPage: React.FC = () => {
             return;
         }
 
-        if (chat_id && messageSocket.current)
+        while (messageSocket.current?.readyState !== WebSocket.OPEN) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
+        if (chat_id && messageSocket.current) {
             messageSocket.current.send(JSON.stringify({action : 'get_messages', chat_id: chat_id, user_id: user_id, vKey: vKey}));
+        }
 
         if (chat_id) {
             setChatId(chat_id);
         }
 
-    }, []);
+    }, [navigate, setupWebSocket]);
 
-    const testfetchChats = useCallback(async(data : any) => {
+    const fetchChats = useCallback(async(data : any) => {
         const cookies = document.cookie.split(';');
         
         if (!cookies) {
@@ -454,54 +486,9 @@ const ChatsPage: React.FC = () => {
     } , []);
 
     useEffect(() => {
-        messageSocket.current = new WebSocket(API_BASE_URL + "/new/chat");
-
-        messageSocket.current.onopen = () => {
-            const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
-            const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
-
-            if (!user_id || !vKey) {
-                startTransition(() => navigate('/login'));
-                return;
-            }
-            
-            if (messageSocket.current) messageSocket.current.send(JSON.stringify({user_id: user_id, vKey: vKey}));
-        };
-
-        messageSocket.current.onmessage = async(event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'system') {
-                if (data.message === 'Unauthorized') {
-                    startTransition(() => navigate('/login'));
-                } else if (data.status === 'NOK') {
-                    setError('An error occurred');
-                }
-            } else if (data.type === 'messages') {
-                await testfetchMessages(data.messages);
-            }
-        }
-
-        messageSocket.current.onclose = () => {
-            setError('Connection closed by server');
-            messageSocket.current = new WebSocket(API_BASE_URL + "/new/chat");
-
-            messageSocket.current.onopen = () => {
-                const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
-                const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
-
-                if (!user_id || !vKey) {
-                    startTransition(() => navigate('/login'));
-                    return;
-                }
-
-                if (messageSocket.current) messageSocket.current.send(JSON.stringify({user_id: user_id, vKey: vKey}));
-            }
-
-        }
 
         return () => {
             if (messageSocket.current) {
-                console.log('closing');
                 messageSocket.current.close();
             }
         }
@@ -530,18 +517,18 @@ const ChatsPage: React.FC = () => {
                 if (data.message === 'Unauthorized') {
                     startTransition(() => navigate('/login'));
                 } else if (data.message === 'NOK') {
-                    setError('An error occurred');
+                    showError('An error occurred');
                 }
 
             } else if (data.type === 'chats') {
 
-                await testfetchChats(data.chats);
+                await fetchChats(data.chats);
 
             }
         }
 
         chatsSocket.current.onclose = () => {
-            setError('Connection closed by server');
+            showError('Connection closed by server');
             chatsSocket.current = new WebSocket(API_BASE_URL + "/new/chats");
 
             chatsSocket.current.onopen = () => {
@@ -563,20 +550,7 @@ const ChatsPage: React.FC = () => {
             }
         }
 
-    } , [navigate]);
-
-    // useEffect(() => {
-
-    //     const chatsUpdate = setInterval(async() => {
-    //         await fetchChats();
-    //     }
-    //     , 2000);
-
-    //     return () => {
-    //         clearInterval(chatsUpdate);
-    //     }
-
-    // } , [fetchChats]);
+    } , [navigate, fetchChats]);
 
     useEffect(() => {
         if (headerRef.current) {

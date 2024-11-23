@@ -14,6 +14,7 @@ from src.config import ENDPOINT_HOST, ENDPOINT_PORT
 from src.sql import Database
 from fastapi.middleware.cors import CORSMiddleware
 from src.models import *
+from src.sockets import SocketsManager
 from src.imgur import ImageUploader
 from datetime import datetime, timedelta, timezone
 import logging
@@ -21,6 +22,7 @@ import logging
 app = FastAPI()
 
 db = Database()
+manager = SocketsManager()
 
 logging.basicConfig(level=logging.INFO)
 
@@ -103,101 +105,49 @@ activeMessagesSockets, activeChatsSockets = [], []
 
 @app.websocket('/api/v1.0/new/chat')
 async def chat(websocket: WebSocket) -> None:
-    print(activeMessagesSockets)
     try:
-        await websocket.accept()
+        await manager.connect(websocket)
         is_authorized = False
 
-        # check if websocket is closed
-        # if closed, remove it from active sockets
-
         while True:
-            data = await websocket.receive_json()
+            data = await manager.receive(websocket)
             if not is_authorized:
                 user_id = data.get('user_id')
                 vKey = data.get('vKey')
-                if db.check_validation_key(user_id, vKey):
+                if await manager.authorize(db, websocket, user_id, vKey):
                     is_authorized = True
-
-                    if {'user_id': user_id, 'vKey': vKey, 'websocket': websocket} not in activeMessagesSockets:
-                        activeMessagesSockets.append({'user_id': user_id, 'vKey': vKey, 'websocket': websocket})
-
-                    await websocket.send_json({'type' : 'system', 'message': 'Authorized'})
                 else:
-                    await websocket.send_json({'type' : 'system', 'message': 'Unauthorized'})
-                    await websocket.close()
+                    await manager.disconnect(websocket)
+                    break
 
             if is_authorized:
-                if data.get('action') == 'get_messages':
-                    messages = db.get_messages(data.get('chat_id'), data.get('user_id'), data.get('vKey'))
-                    if messages is not None:
-                        await websocket.send_json({'type' : 'messages', 'messages': messages})
-                    else:
-                        await websocket.send_json({'type' : 'system', 'status': 'NOK', 'message': 'Server error'})
-                        # await websocket.close()
-
-                elif data.get('action') == 'send_message':
-                    if db.create_message(data.get('chat_id'), data.get('message'), 
-                                         data.get('timestamp'), data.get('author_id'), data.get('vKey')):
-                        await websocket.send_json({'type' : 'system', 'status': 'OK'})
-                        messages = db.get_messages(data.get('chat_id'), data.get('user_id'), data.get('vKey'))
-                        for user in activeMessagesSockets:
-                            if user.get('user_id') == data.get('author_id') and user.get('vKey') == data.get('vKey'):
-                                await user.get('websocket').send_json({'type' : 'messages', 'messages': messages})
-                    else:
-                        await websocket.send_json({'type' : 'system', 'status': 'NOK', 'message': 'Server error'})
-                        # await websocket.close()
-
-                elif data.get('action') == 'edit_message':
-                    print(data)
-                    if db.update_message(data.get('message_id'), data.get('message'), data.get('author_id'), data.get('vKey')):
-                        await websocket.send_json({'type' : 'system', 'status': 'OK'})
-                        messages = db.get_messages(data.get('chat_id'), data.get('author_id'), data.get('vKey'))
-                        for user in activeMessagesSockets:
-                            if user.get('user_id') == data.get('author_id') and user.get('vKey') == data.get('vKey'):
-                                await user.get('websocket').send_json({'type' : 'messages', 'messages': messages})
-                    else:
-                        await websocket.send_json({'type' : 'system', 'status': 'NOK', 'message': 'Server error'})
-                        # await websocket.close()
-
-                elif data.get('action') == 'delete_message':
-                    if db.delete_message(data.get('message_id'), data.get('user_id'), data.get('vKey')):
-                        await websocket.send_json({'message': 'Message deleted'})
-                    else:
-                        await websocket.send_json({'type' : 'system', 'status': 'NOK', 'message': 'Server error'})
-                        # await websocket.close()
+                await manager.parse_message_action(db, websocket, data)
 
     except WebSocketDisconnect:
-        if activeMessagesSockets.count({'websocket': websocket}) > 0:
-            activeMessagesSockets.remove({'websocket': websocket})
+        await manager.user_closed_session(websocket)
 
 @app.websocket('/api/v1.0/new/chats')
 async def user_chats(websocket: WebSocket) -> None:
     try:
-        await websocket.accept()
+        await manager.connect(websocket)
         is_authorized = False
         while True:
-            data = await websocket.receive_json()
+            data = await manager.receive(websocket)
             if not is_authorized:
                 user_id = data.get('user_id')
                 vKey = data.get('vKey')
-                if db.check_validation_key(user_id, vKey):
+                if await manager.authorize(db, websocket, user_id, vKey):
                     is_authorized = True
-
-                    if {'user_id': user_id, 'vKey': vKey, 'websocket': websocket} not in activeChatsSockets:
-                        activeChatsSockets.append({'user_id': user_id, 'vKey': vKey, 'websocket': websocket})
-
                     await websocket.send_json({'type' : 'chats', 'chats': db.get_chats(user_id, vKey)})
                 else:
-                    await websocket.send_json({'type' : 'system', 'message': 'Unauthorized'})
-                    await websocket.close()
+                    await manager.disconnect(websocket)
+                    break
 
             if is_authorized:
                 pass
 
     except WebSocketDisconnect:
-        if activeChatsSockets.count({'websocket': websocket}) > 0:
-            activeChatsSockets.remove({'websocket': websocket})
+        await manager.user_closed_session(websocket)
 
 @app.post('/api/v1.0/image/upload')
 async def upload_image(image: UploadFile = None) -> dict:

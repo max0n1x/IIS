@@ -188,6 +188,8 @@ const AddItemPage: React.FC = () => {
 
             <div className={AddItemPageStyles["main-container"]} >
 
+                <div className = {AddItemPageStyles["mandatory"]}><span style={{ color: "red" }}>*</span> - mandatory fields, image is required</div>
+
                 <div onDragOver={handleDragOver} onDrop={handleDrop} 
                 onClick={handleClick} className={AddItemPageStyles['image-upload-container']} 
                 ref = {uploadContainerRef}>
@@ -215,25 +217,25 @@ const AddItemPage: React.FC = () => {
                 </div>
 
                 <div className={AddItemPageStyles["price-input-container"]}>
-                    <label htmlFor="price" className={AddItemPageStyles["price-label"]}>Price:</label>
+                    <label htmlFor="price" className={AddItemPageStyles["price-label"]}>Price<span style={{ color: "red" }}>*</span></label>
                     <input type="text" name="price" className={AddItemPageStyles["price-input"]} id="price" 
                     placeholder="set item price" value = {ItemData.price} onChange = {handleInputChange}/>
                 </div>
 
                 <div className={AddItemPageStyles["name-input-container"]}>
-                    <label htmlFor="name" className={AddItemPageStyles["name-label"]}>Name:</label>
+                    <label htmlFor="name" className={AddItemPageStyles["name-label"]}>Name<span style={{ color: "red" }}>*</span></label>
                     <input type="text" name="name" className={AddItemPageStyles["name-input"]} id="name" 
                     placeholder="Add item naming here..." value = {ItemData.name} onChange = {handleInputChange}/>
                 </div>
 
                 <div className={AddItemPageStyles["size-input-container"]}>
-                    <label htmlFor="size" className={AddItemPageStyles["size-label"]}>Size:</label>
+                    <label htmlFor="size" className={AddItemPageStyles["size-label"]}>Size<span style={{ color: "red" }}>*</span></label>
                     <input type="text" name="size" className={AddItemPageStyles["size-input"]} id="size" 
                     placeholder="Add item size here..." value = {ItemData.size} onChange = {handleInputChange}/>
                 </div>
 
                 <div className={AddItemPageStyles["condition-input-container"]}>
-                    <label htmlFor="condition" className={AddItemPageStyles["condition-label"]}>Condition:</label>
+                    <label htmlFor="condition" className={AddItemPageStyles["condition-label"]}>Condition<span style={{ color: "red" }}>*</span></label>
                     <select name="conditionId" className={AddItemPageStyles["condition-input"]} id="condition" defaultValue="-none-" 
                     onChange={handleInputChange}>
                         <option value="-none-">--none--</option>
@@ -247,7 +249,7 @@ const AddItemPage: React.FC = () => {
                 </div>
 
                 <div className={AddItemPageStyles["category-input-container"]}>
-                    <label htmlFor="category" className={AddItemPageStyles["category-label"]}>Category:</label>
+                    <label htmlFor="category" className={AddItemPageStyles["category-label"]}>Category<span style={{ color: "red" }}>*</span></label>
                     <select name="categoryId" className={AddItemPageStyles["category-input"]} id="category" defaultValue="-none-"
                     onChange={handleInputChange}>
                         <option value="-none-">--none--</option>

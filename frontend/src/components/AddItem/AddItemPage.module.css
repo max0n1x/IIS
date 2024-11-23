@@ -7,6 +7,20 @@
  * @author Neonila Mashlai - xmashl00
 */
 
+.mandatory{
+    color: red;
+    font-size: 1em;
+    font-weight: 700;
+    position: absolute;
+    transform: translateX(-50%);
+    display: flex;
+    top: 15%;
+    left: 22%;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
 .image-upload-container{
     width: 30%;
     height: 50%;

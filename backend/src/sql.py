@@ -124,6 +124,14 @@ class Database:
                             FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE);
             ''')
 
+            cursor.execute('''CREATE TABLE IF NOT EXISTS codes (
+                            id INT PRIMARY KEY AUTO_INCREMENT,
+                            code TEXT NOT NULL,
+                            expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            username TEXT NOT NULL,
+                            password_hash TEXT NOT NULL
+            ''')
+
             self.conn.commit()
 
         except Error as e:

@@ -122,7 +122,7 @@ const LoginPage: React.FC = () => {
 
             {/* Username input field */}
             <label htmlFor="username" 
-                    className={LoginPageStyle['username-label']}>Login:</label>
+                    className={LoginPageStyle['username-label']}>Login or email:</label>
             <input type="text" name="username" 
                     className={LoginPageStyle['username-input']} id="username"
                     onChange={e => setUsername(e.target.value)} />

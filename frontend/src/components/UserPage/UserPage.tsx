@@ -57,6 +57,16 @@ const UserPage: React.FC = () => {
         );
     }
 
+    const validateEmail = (email : string) => {
+        const re = /\S+@\S+\.\S+/;
+        return re.test(email);
+    }
+
+    const validatePhoneNumber = (phone : string) => {
+        const re = /^\+?([0-9]{1,4})\)?[-. ]?([0-9]{1,4})[-. ]?([0-9]{1,4})[-. ]?([0-9]{1,4})$/;
+        return re.test(phone);
+    }
+
     const inputAbort = (e : React.FocusEvent<HTMLInputElement>) => {
         e.preventDefault();
         e.target.disabled = true;
@@ -65,6 +75,17 @@ const UserPage: React.FC = () => {
     const HandleKeys = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
             e.preventDefault();
+            
+            if ((e.target as HTMLInputElement).type === "email" && !validateEmail((e.target as HTMLInputElement).value)) {
+                setTimeout(() => { setError("Invalid email format"); }, 2000);
+                return;
+            }
+
+            if ((e.target as HTMLInputElement).type === "tel" && !validatePhoneNumber((e.target as HTMLInputElement).value)) {
+                setTimeout(() => { setError("Invalid phone number format"); }, 2000);
+                return;
+            }
+
             (e.target as HTMLInputElement).disabled = true;
         }
     };    

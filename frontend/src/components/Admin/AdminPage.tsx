@@ -125,7 +125,11 @@ const AdminPage: React.FC = () => {
                 <h1 className={AdminPageStyles["page-title"]}>Admin Dashboard</h1>
 
                 {/* Website Statistics */}
-                <div className={AdminPageStyles["stats-container"]}>
+                <div className={AdminPageStyles["stats-column"]}>
+                    <div className={AdminPageStyles["stat"]}>
+                        <label>Total visits:</label>
+                        <div className={AdminPageStyles["stat-value"]}>{websiteStats.totalVisits}</div>
+                    </div>
                     <div className={AdminPageStyles["stat"]}>
                         <label>Visits (Last 24h):</label>
                         <div className={AdminPageStyles["stat-value"]}>{websiteStats.visits24h}</div>

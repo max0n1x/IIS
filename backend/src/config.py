@@ -21,3 +21,8 @@ DATABASE_PASSWORD = config['database']['password']
 
 ENDPOINT_HOST = config['endpoint']['host']
 ENDPOINT_PORT = int(config['endpoint']['port'])
+
+MAIL_HOST = config['mail']['host']
+MAIL_PORT = int(config['mail']['port'])
+MAIL_USER = config['mail']['user']
+MAIL_PASSWORD = config['mail']['password']

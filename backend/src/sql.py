@@ -129,7 +129,7 @@ class Database:
                             code TEXT NOT NULL,
                             expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             username TEXT NOT NULL,
-                            password_hash TEXT NOT NULL
+                            password_hash TEXT NOT NULL);
             ''')
 
             self.conn.commit()
@@ -405,18 +405,20 @@ class Database:
 
             cursor = self.conn.cursor()
 
-            cursor.execute('SELECT * FROM users WHERE username = %s', (user['username'],))
+            cursor.execute('SELECT * FROM users WHERE email = %s', (user['email'],))
             row = cursor.fetchone()
 
             if row:
-                self.log_error('Username already taken')
+                self.log_error('Email already taken')
                 return -1
 
             hasher = Hasher()
             hash = hasher.hash_password(user['password'])
 
-            cursor.execute('INSERT INTO users (username, password_hash) VALUES (%s, %s)', 
-                        (user['username'], hash))
+
+
+            cursor.execute('INSERT INTO codes (code, username, password_hash) VALUES (%s, %s, %s)', 
+                        (hasher.generate_code(), user['username'], hash))
 
             self.conn.commit()
 
@@ -552,8 +554,8 @@ class Database:
 
             cursor = self.conn.cursor()
 
-            cursor.execute('UPDATE users SET name = %s, surname = %s, email = %s, phone = %s, address = %s, date_of_birth = %s WHERE id = %s', 
-                        (user['name'], user['surname'], user['email'], user['phone'], user['address'], user['date_of_birth'], user['user_id']))
+            cursor.execute('UPDATE users SET name = %s, surname = %s, phone = %s, address = %s, date_of_birth = %s WHERE id = %s', 
+                        (user['name'], user['surname'], user['phone'], user['address'], user['date_of_birth'], user['user_id']))
 
             self.conn.commit()
 

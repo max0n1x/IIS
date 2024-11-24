@@ -23,3 +23,6 @@ class Hasher:
     
     def generate_vkey(self) -> str:
         return hashlib.sha3_512(''.join(random.choices(string.ascii_letters + string.digits, k=256)).encode()).hexdigest()
+    
+    def generate_code(self) -> str:
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=6) )

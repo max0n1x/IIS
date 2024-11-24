@@ -77,12 +77,14 @@ const UserPage: React.FC = () => {
             e.preventDefault();
             
             if ((e.target as HTMLInputElement).type === "email" && !validateEmail((e.target as HTMLInputElement).value)) {
-                setTimeout(() => { setError("Invalid email format"); }, 2000);
+                setError("Invalid email format");
+                setTimeout(() => { setError(''); }, 2000);
                 return;
             }
 
             if ((e.target as HTMLInputElement).type === "tel" && !validatePhoneNumber((e.target as HTMLInputElement).value)) {
-                setTimeout(() => { setError("Invalid phone number format"); }, 2000);
+                setError("Invalid phone number format");
+                setTimeout(() => { setError(''); }, 2000);
                 return;
             }
 
@@ -204,7 +206,6 @@ const UserPage: React.FC = () => {
             vKey : vKey.split('=')[1],
             name: UserData.name,
             surname: UserData.surname,
-            email: UserData.email,
             phone: UserData.phone,
             address: UserData.address,
             date_of_birth: UserData.date_of_birth,
@@ -244,16 +245,20 @@ const UserPage: React.FC = () => {
                 }, 2000);  
             } else if (response.status === 409) {
                 setError("Username already exists");
+                setTimeout(() => { setError(''); }, 2000);
             } else if (response.status === 500) {
                 setError("Server error");
+                setTimeout(() => { setError(''); }, 2000);
             } else if (response.status === 400) {
                 setError("Username or password cannot be empty");
+                setTimeout(() => { setError(''); }, 2000);
             } else {
                 throw new Error('Something went wrong');
             }
         } catch (err) {
             console.error('Error:', err);
             setError("Failed to connect to the server");
+            setTimeout(() => { setError(''); }, 2000);
         }
     };
 
@@ -427,7 +432,6 @@ const UserPage: React.FC = () => {
                     <label htmlFor="email" className={UserPageStyles["email-label"]}>E-mail:</label>
                     <input type="email" name="email" className={UserPageStyles["email-input"]} id="email" onKeyDown={HandleKeys} onBlur={inputAbort}
                     placeholder="set email" value = {UserData.email} onChange = {handleInputChange} ref={EmailInputRef} disabled/>
-                    <input type="button" value="EDIT" name = "edit-email" className={UserPageStyles["edit-email-button"]} onClick = {setUnlock} />
                 </div>
 
                 <div className={UserPageStyles["phone-input-container"]}>

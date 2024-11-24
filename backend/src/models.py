@@ -38,13 +38,8 @@ class ItemUpdate(BaseModel):
 
 class User(BaseModel):
     username: str
-    password: str
-    name : Optional[str] = None
-    surname : Optional[str] = None
+    password: Optional[str] = None
     email: Optional[str] = None
-    phone: Optional[str] = None
-    address: Optional[str]  = None
-    date_of_birth: Optional[str] = None
 
 class CookieUser(BaseModel):
     user_id: int
@@ -60,7 +55,6 @@ class UserUpdate(BaseModel):
     vKey: str
     name : Optional[str]
     surname : Optional[str]
-    email: Optional[str]
     phone: Optional[str]
     address: Optional[str]
     date_of_birth: Optional[str]

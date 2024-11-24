@@ -45,6 +45,9 @@ class UserVerify(BaseModel):
     email: str
     code: str
 
+class UserEmail(BaseModel):
+    email: str
+
 class CookieUser(BaseModel):
     user_id: int
     vKey: str

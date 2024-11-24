@@ -126,6 +126,7 @@ class Database:
             cursor.execute('''CREATE TABLE IF NOT EXISTS codes (
                             id INT PRIMARY KEY AUTO_INCREMENT,
                             code TEXT NOT NULL,
+                            email TEXT NOT NULL,
                             expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             username TEXT NOT NULL,
                             password_hash TEXT NOT NULL);
@@ -427,9 +428,15 @@ class Database:
             if not self.mailer.send_code(user['email'], code):
                 self.log_error('Cannot send code')
                 return -3
+            
+            cursor.execute('SELECT * FROM codes WHERE email = %s', (user['email'],))    
+            row = cursor.fetchone()
 
-            cursor.execute('INSERT INTO codes (code, expires_at, username, password_hash) VALUES (%s, DATE_ADD(NOW(), INTERVAL 15 MINUTE), %s, %s)',
-                        (code, user['username'], hash))
+            if row:
+                cursor.execute('DELETE FROM codes WHERE email = %s', (user['email'],))
+
+            cursor.execute('INSERT INTO codes (code, expires_at, username, password_hash, email) VALUES (%s, DATE_ADD(NOW(), INTERVAL 1 HOUR), %s, %s, %s)',
+                        (code, user['username'], hash, user['email']))
 
             self.conn.commit()
 
@@ -455,8 +462,10 @@ class Database:
                 return -1
             
             else:
-                cursor.execute('INSERT INTO users (username, password_hash, email) VALUES (%s, %s, %s)',
-                            (row[2], row[3], row[1]))
+                # cursor.execute('INSERT INTO users (username, password_hash, email) VALUES (%s, %s, %s)',
+                #             (row[2], row[3], row[1]))
+
+                print(f"INSERT INTO users (username, password_hash, email) VALUES ({row[4]}, {row[5]}, {row[2]})")
 
                 self.conn.commit()
 
@@ -473,7 +482,36 @@ class Database:
             return -3
         
     def resend_code(self, email: str) -> bool:
-        pass
+        """ resend code to email """
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT * FROM codes WHERE email = %s', (email,))
+            row = cursor.fetchone()
+
+            if row:
+                cursor.execute('DELETE FROM codes WHERE email = %s', (email,))
+
+            hasher = Hasher()
+            code = hasher.generate_code()
+
+            cursor.execute('INSERT INTO codes (code, expires_at, email, username, password_hash) VALUES (%s, DATE_ADD(NOW(), INTERVAL 1 HOUR), %s, %s, %s)',
+                        (code, email, row[4], row[5]))
+            
+            self.conn.commit()
+
+            if not self.mailer.send_code(email, code):
+                self.log_error('Cannot send code')
+                return False
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot resend code')
+            return False
         
     def login_user(self, **user) -> int:
         """ login a user and return user id if correct username and password are provided, 

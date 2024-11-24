@@ -23,23 +23,12 @@ const RegisterPage: React.FC = () => {
     const headerRef = useRef<HTMLDivElement | null>(null);
     const navigate = useNavigate();
 
+    const validateEmail = (email : string) => {
+      const re = /\S+@\S+\.\S+/;
+      return re.test(email);
+    };
+
     useEffect(() => {
-
-        const checkIfLoggedIn = async () => {
-            await GetUserInformation().then((data) => {
-                if (data) {
-                    navigate('/');
-                }
-            });
-        };
-
-        const cookies = document.cookie.split(';');
-        const user_id = cookies.find(cookie => cookie.includes('user_id'));
-        const vKey = cookies.find(cookie => cookie.includes('vKey'));
-
-        if (cookies && user_id && vKey) {
-            checkIfLoggedIn();
-        }
 
         if (headerRef.current) {
             fixElementHeight(headerRef.current);
@@ -58,17 +47,17 @@ const RegisterPage: React.FC = () => {
           setError("Passwords do not match");
           return;
         }
+
+        if (!validateEmail(email)) {
+          setError("Invalid email address");
+          return;
+        }
     
         const data = {
           username: username,
           password: password,
           email: email,
         };
-
-        const validateEmail = (email : string) => {
-          const re = /\S+@\S+\.\S+/;
-          return re.test(email);
-      }
     
         try {
           const response = await fetch(API_BASE_URL + "/code", {
@@ -80,7 +69,7 @@ const RegisterPage: React.FC = () => {
           });
     
           if (response.ok) {
-            navigate('/verify?email=' + email + '&username=' + username);
+            navigate('/verify?email=' + email);
           } else if (response.status === 409) {
             setError("Username already exists");
           } else if (response.status === 500) {

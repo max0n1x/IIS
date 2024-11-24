@@ -21,7 +21,17 @@ class Mailer:
         msg['From'] = formataddr((str(Header('Email verification', 'utf-8')), MAIL_USER))
         msg['To'] = to
         msg['Subject'] = 'Verification code'
-        msg.attach(MIMEText(f'Your verification code is: {code}', 'plain'))
+
+        html_content = f"""
+                <html>
+                <head></head>
+                <body>
+                    <p>Your verification code is:</p>
+                    <p style="font-size: 20px;"><u>{code}</u></p>
+                </body>
+                </html>
+        """
+        msg.attach(MIMEText(html_content, 'html'))
 
         try:
             self.server.send_message(msg)

@@ -122,7 +122,7 @@ async def user_registration(user : User) -> bool:
         raise HTTPException(status_code=500, detail='Server error')
     
 @app.post('/api/v1.0/verify')
-async def verify_user(user : User) -> bool:
+async def verify_user(user : UserVerify) -> bool:
     """ verify user code """
     status = db.verify_user(**user.dict())
     if status == 0:
@@ -131,6 +131,13 @@ async def verify_user(user : User) -> bool:
         raise HTTPException(status_code=400, detail='Code is incorrect')
     else:
         raise HTTPException(status_code=500, detail='Server error')
+    
+@app.post('/api/v1.0/resend-code')
+async def resend_code(email : UserEmail) -> bool:
+    """ resend verification code """
+    if db.resend_code(email.email):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
 
 
 @app.post('/api/v1.0/login')

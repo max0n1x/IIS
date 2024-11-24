@@ -57,9 +57,11 @@ const VerifyPage: React.FC = () => {
                 setTimeout(() => navigate('/login'), 2000);
             } else {
                 setError("Invalid verification code");
+                setSuccessMessage('');
             }
         } catch (err) {
             setError("Failed to connect to the server");
+            setSuccessMessage('');
         }
     };
 
@@ -70,6 +72,7 @@ const VerifyPage: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({ email: email }),
             });
 
             if (response.ok) {
@@ -77,9 +80,11 @@ const VerifyPage: React.FC = () => {
                 setError('');
             } else {
                 setError("Failed to resend code");
+                setSuccessMessage('');
             }
         } catch (err) {
             setError("Failed to connect to the server");
+            setSuccessMessage('');
         }
     };
 
@@ -88,11 +93,8 @@ const VerifyPage: React.FC = () => {
 
         const email = queryParams.get('email');
         if (email) setEmail(email);
-        const username = queryParams.get('username');
 
-        console.log(email, username);
-
-        if (!email || !username) {
+        if (!email) {
             navigate('/register');
         }
 

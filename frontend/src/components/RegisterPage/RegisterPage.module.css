@@ -1,57 +1,47 @@
-/**
- * Project: IIS project - Garage sale website
- * @file RegisterPage.module.css
-
- * @brief Styles for register page
-
- * @author Maksym Podhornyi xpodho08
-*/
-
 .password-label,
 .password-label1,
-.username-label{
+.username-label,
+.email-label {
     position: absolute;
     color: var(--blue);
     font-family: var(--font-inria-sans);
     font-weight: 700;
     display: flex;
     align-items: flex-end;
-    font-size: var(--font-size-13xl)
+    font-size: var(--font-size-13xl);
 }
 
 .username-label {
-    top: 33.5%;
+    top: 30%;
+    left: 36.39%;
+    width: 27.22%;
+    height: 5.86%;
+}
+
+.email-label {
+    top: 40%;
     left: 36.39%;
     width: 27.22%;
     height: 5.86%;
 }
 
 .password-label {
-    top: 46.34%;
+    top: 50%;
     left: 36.39%;
     width: 27.22%;
     height: 5.86%;
 }
 
 .password-label1 {
-    top: 59.18%;
+    top: 60%;
     left: 36.39%;
     width: 27.22%;
     height: 5.86%;
 }
 
 .username-input,
-.password-input {
-    position: absolute;
-    background: var(--white);
-    border-radius: var(--br-6xl);
-    border: none;
-    color: var(--blue);
-    font-family: var(--font-inria-sans);
-    font-weight: 700;
-}
-
-.username-input,
+.password-input,
+.email-input,
 .password-input1 {
     position: absolute;
     background: var(--white);
@@ -63,38 +53,45 @@
 }
 
 .username-input {
-    top: 40%;
+    top: 35%;
+    left: 36.39%;
+    width: 27.22%;
+    height: 4.88%;
+}
+
+.email-input {
+    top: 45%;
     left: 36.39%;
     width: 27.22%;
     height: 4.88%;
 }
 
 .password-input {
-    top: 53%;
+    top: 55%;
     left: 36.39%;
     width: 27.22%;
     height: 4.88%;
 }
 
 .password-input1 {
-    top: 66%;
+    top: 65%;
     left: 36.39%;
     width: 27.22%;
     height: 4.88%;
 }
 
-.register-form{
+.register-form {
     position: absolute;
     top: 30.53%;
     left: 33.33%;
     width: 33.33%;
-    height: 50.88%;
-    background-color:  rgba(217, 217, 217, 0.7);
+    height: 50%;
+    background-color: rgba(217, 217, 217, 0.7);
 }
 
-.error{
+.error {
     position: absolute;
-    top: 82%;
+    top: 75%;
     left: 33.3%;
     width: 33.33%;
     height: auto;
@@ -107,7 +104,7 @@
 
 .sign-up-btn {
     position: absolute;
-    top: 73%;
+    top: 70%;
     left: 36.46%;
     width: 27.22%;
     height: 6.84%;

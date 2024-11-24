@@ -25,6 +25,7 @@ import AdminPage from './components/Admin/AdminPage';
 import './components/GlobalStyles.css';
 import './App.css';
 import VerifyPage from './components/MailVerify/VerifyPage';
+import ForgotPasswordPage from './components/ForgotPassword/ForgotPasswordPage';
 
 const App = () => {
   return (
@@ -51,6 +52,7 @@ const App = () => {
         <Route path="*" element={<Page404 />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/verify" element={<VerifyPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       </Routes>
     </BrowserRouter>
   );

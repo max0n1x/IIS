@@ -1,12 +1,3 @@
-/*
- * Project: IIS project - Garage sale website
- * @file ItemPage.module.css
-
- * @brief Styles for page for displaying item
-
- * @author Neonila Mashlai - xmashl00
-*/
-
 .image-container{
     width: 35%;
     height: 60%;
@@ -139,7 +130,6 @@
     color: var(--black);
 }
 
-
 .contact-seller-button:hover{
     cursor: pointer;
     background-color: #bfbfbf;
@@ -149,10 +139,59 @@
     background-color: #a6a6a6;
 }
 
-.error{
-    color: red;
+/* Report Section Styles */
+.report-section {
+    position: absolute;
+    bottom: 33%;  /* Aligns with the Contact Seller button */
+    right: 5%;    /* Positions it at the right */
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers the content */
+    width: 250px; /* Ensures all elements have the same width */
+}
+
+.report-label {
     font-size: 1.5em;
     font-weight: 700;
+    color: var(--black);
+    margin-bottom: 10px; /* Space between label and dropdown */
+    width: 100%;  /* Ensures the label is the same width as the dropdown and button */
     text-align: center;
-    margin-top: 10px;
+}
+
+.report-dropdown,
+.report-button {
+    width: 100%;  /* Ensures the dropdown and button are the same width */
+    max-width: 250px; /* Sets a max-width to ensure the elements don’t stretch too wide */
+    font-size: 1.2em;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.report-button {
+    height: 50px;
+    margin-top: 20px;
+    background-color: #f5c6cb;
+    border-radius: 20px;
+    border: none;
+    outline: none;
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--black);
+    padding: 0 20px; /* More padding for better text positioning */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.report-button:hover {
+    cursor: pointer;
+    background-color: #f1a1b8;
+}
+
+.report-button:active {
+    background-color: #e87b99;
 }

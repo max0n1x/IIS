@@ -1,24 +1,24 @@
 /*
  * Project: IIS project - Garage sale website
- * @file ItemPage.js
+ * @file ItemPage.tsx
 
  * @brief ReactJS component of the item page of the website
 
  * @author Maksym Podhornyi - xpodho08
 */
 
-import React, {useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ItemPageStyle from "./ItemPage.module.css";
 import { fixElementHeight, checkLogin, Contacts, Header, GetItem, API_BASE_URL } from "../Utils";
 import "../GlobalStyles.css";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const ItemPage: React.FC = () => {
-
     const headerRef = useRef(null);
     const logInRef = useRef(null);
     const loggedIn = useRef(null);
     const contactRef = useRef(null);
+    const reportRef = useRef(null);  // Ref for the report button
 
     const [ItemName, setItemName] = useState("");
     const [ItemSize, setItemSize] = useState("");
@@ -27,6 +27,7 @@ const ItemPage: React.FC = () => {
     const [ItemPrice, setItemPrice] = useState("");
     const [ItemImage, setItemImage] = useState("");
     const [ItemSeller, setItemSeller] = useState("");
+    const [ReportReason, setReportReason] = useState("");  // State for report reason
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -53,7 +54,7 @@ const ItemPage: React.FC = () => {
             item_id: item_id,
             user_to: ItemSeller,
             user_from: user.split('=')[1],
-            vKey : vKey.split('=')[1]
+            vKey: vKey.split('=')[1]
         };
 
         if (parseInt(user.split('=')[1]) === parseInt(ItemSeller)) {
@@ -83,40 +84,78 @@ const ItemPage: React.FC = () => {
         } catch (err) {
             console.log(err);
         }
-    }
-    
+    };
+
+    const handleReport = async () => {
+        if (!ReportReason) {
+            alert("Please select a reason for reporting.");
+            return;
+        }
+
+        const cookies = document.cookie.split(';');
+        const user = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if (!user || !vKey) {
+            navigate('/login');
+            return;
+        }
+
+        const data = {
+            item_id: item_id,
+            user_id: user.split('=')[1],
+            vKey: vKey.split('=')[1],
+            report_reason: ReportReason
+        };
+
+        try {
+            const response = await fetch(API_BASE_URL + "/report", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert("Thank you for reporting. We will review the item.");
+            } else {
+                alert("An error occurred while submitting your report.");
+            }
+        } catch (err) {
+            console.log(err);
+            alert("An error occurred. Please try again.");
+        }
+    };
+
     useEffect(() => {
         if (headerRef.current) {
             fixElementHeight(headerRef.current);
         }
-        
-        if(!item_id) {
+
+        if (!item_id) {
             navigate('*');
             return;
         }
-        
+
         GetItem(item_id).then((item) => {
-            if(!item) {
+            if (!item) {
                 navigate('*');
                 return;
             }
             setItemName(item.name);
             setItemSize(item.size);
-            if(item.condition_id === "new") {
+            if (item.condition_id === "new") {
                 setItemCondition("Brand new");
-            } else if(item.condition_id === "likeNew") {
+            } else if (item.condition_id === "likeNew") {
                 setItemCondition("Like new");
-            }
-            else if(item.condition_id === "gentlyUsed") {
+            } else if (item.condition_id === "gentlyUsed") {
                 setItemCondition("Gently used");
-            }
-            else if(item.condition_id === "used") {
+            } else if (item.condition_id === "used") {
                 setItemCondition("Used");
-            }
-            else if(item.condition_id === "vintage") {
+            } else if (item.condition_id === "vintage") {
                 setItemCondition("Vintage or retro");
-            }
-            else if(item.condition_id === "forParts") {
+            } else if (item.condition_id === "forParts") {
                 setItemCondition("For parts or repair");
             }
             setItemDescription(item.description);
@@ -124,19 +163,18 @@ const ItemPage: React.FC = () => {
             setItemImage(item.image_path);
             setItemSeller(item.author_id);
         });
-    
-        checkLogin(loggedIn, logInRef)
+
+        checkLogin(loggedIn, logInRef);
 
     }, [navigate, location, item_id, ItemSeller]);
 
     return (
         <div>
-
             <Header headerRef={headerRef} logInRef={logInRef} loggedIn={loggedIn} />
 
-            <div className={ItemPageStyle["main-container"]} >
-                <div  className={ItemPageStyle['image-container']} >
-                    <img src={ItemImage} alt="Preview" className={ItemPageStyle["image-preview"]}/>
+            <div className={ItemPageStyle["main-container"]}>
+                <div className={ItemPageStyle['image-container']}>
+                    <img src={ItemImage} alt="Preview" className={ItemPageStyle["image-preview"]} />
                 </div>
 
                 <div className={ItemPageStyle["item-price"]}>Price: €{ItemPrice}</div>
@@ -162,14 +200,32 @@ const ItemPage: React.FC = () => {
                         {ItemDescription}
                     </div>
                 </div>
- 
-                <input type = "submit" className={ItemPageStyle["contact-seller-button"]} ref = {contactRef}
-                onClick={CreateChat} value = "Contact seller" />
 
+                <input type="submit" className={ItemPageStyle["contact-seller-button"]} ref={contactRef}
+                    onClick={CreateChat} value="Contact seller" />
+
+                {/* Report section */}
+                <div className={ItemPageStyle["report-section"]}>
+                    <label htmlFor="report-reason" className={ItemPageStyle["report-label"]}>Report this item:</label>
+                    <select
+                        id="report-reason"
+                        ref={reportRef}
+                        className={ItemPageStyle["report-dropdown"]}
+                        onChange={(e) => setReportReason(e.target.value)}
+                    >
+                        <option value="">Select reason</option>
+                        <option value="Inappropriate content">Inappropriate content</option>
+                        <option value="Fake item">Fake item</option>
+                        <option value="Spam or scam">Spam or scam</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <button className={ItemPageStyle["report-button"]} onClick={handleReport}>
+                        Report Item
+                    </button>
+                </div>
             </div>
 
             <Contacts />
-
         </div>
     );
 }

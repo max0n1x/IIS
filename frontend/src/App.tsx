@@ -21,6 +21,7 @@ import AddItemPage from './components/AddItem/AddItemPage';
 import EditItemPage from './components/EditItem/EditItemPage';
 import ChatsPage from './components/Chats/ChatsPage'
 import Page404 from './components/ErrorPages/Page404';
+import AdminPage from './components/Admin/AdminPage';
 import './components/GlobalStyles.css';
 import './App.css';
 
@@ -47,6 +48,7 @@ const App = () => {
         <Route path="/item" element={<ItemPage />} />
         <Route path="/user/chats" element={<ChatsPage />} />
         <Route path="*" element={<Page404 />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </BrowserRouter>
   );

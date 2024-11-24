@@ -79,9 +79,11 @@ const AdminPage: React.FC = () => {
                 const data = await response.json();
                 setWebsiteStats(
                     {
-                        visits: data.visitors,
+                        totalVisits: data.visitors,
                         registeredUsers: data.users,
                         itemsForSale: data.items,
+                        errorsLogged: data.errors,
+                        visits24h: data.visitors_day
                     }
                 );
             } else {

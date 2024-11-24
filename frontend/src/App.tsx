@@ -26,6 +26,7 @@ import './components/GlobalStyles.css';
 import './App.css';
 import VerifyPage from './components/MailVerify/VerifyPage';
 import ForgotPasswordPage from './components/ForgotPassword/ForgotPasswordPage';
+import ChangePasswordPage from './components/ChangePassword/ChangePasswordPage';
 
 const App = () => {
   return (
@@ -53,6 +54,7 @@ const App = () => {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/verify" element={<VerifyPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/change-password" element={<ChangePasswordPage />} />
       </Routes>
     </BrowserRouter>
   );

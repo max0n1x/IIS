@@ -64,6 +64,11 @@ const RegisterPage: React.FC = () => {
           password: password,
           email: email,
         };
+
+        const validateEmail = (email : string) => {
+          const re = /\S+@\S+\.\S+/;
+          return re.test(email);
+      }
     
         try {
           const response = await fetch(API_BASE_URL + "/register", {

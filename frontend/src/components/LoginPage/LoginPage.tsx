@@ -1,9 +1,7 @@
 /*
  * Project: IIS project - Garage sale website
  * @file LoginPage.js
-
  * @brief ReactJS component of the login page of the website
-
  * @author Maksym Podhornyi - xpodho08
 */
 
@@ -145,10 +143,12 @@ const LoginPage: React.FC = () => {
 
             {/* Link to navigate to the registration page */}
             <Link to="/register" className={LoginPageStyle['sign-up-btn']}>Create Account</Link>
+
+            {/* Forgot password link/button */}
+            <Link to="/forgot-password" className={LoginPageStyle['forgot-password-btn']}>Forgot password?</Link>
         </div>
     );
 };
 
 // Exporting the LoginPage component for use in other parts of the application.
 export default LoginPage;
-

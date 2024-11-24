@@ -1,13 +1,3 @@
-/**
- * Project: IIS project - Garage sale website
- * @file LoginPage.css
-
- * @brief Styles for login page
-
- * @author Neonila Mashlai - xmashl00
-
-*/
-
 .password-label,
 .username-label{
     position: absolute;
@@ -123,4 +113,29 @@
 
 .log-in-btn:hover {
     background-color: lightgray;
+}
+
+/* Forgot password link styling */
+.forgot-password-btn {
+    text-decoration: none;
+    position: absolute;
+    top: 82%;  /* Position the button below the login form */
+    left: 36.46%;
+    width: 27.22%;
+    height: 6.84%;
+    border-radius: 20px;
+    border: none;
+    background-color: transparent; /* Make the background transparent */
+    color: var(--blue);
+    font-family: var(--font-inria-serif);
+    font-size: calc(var(--font-size-13xl) - 2px); /* Reduce font size slightly */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.forgot-password-btn:hover {
+    background-color: transparent; /* Keep background transparent on hover */
+    color: var(--blue); /* Ensure the text color remains the same */
 }

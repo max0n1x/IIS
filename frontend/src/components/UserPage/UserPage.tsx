@@ -238,7 +238,7 @@ const UserPage: React.FC = () => {
 
     const handleDeleteClick = async () => {
         if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-            return; // User canceled the confirmation dialog.
+            return;
         }
     
         const cookies = document.cookie.split(';');

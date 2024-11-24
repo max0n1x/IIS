@@ -119,6 +119,13 @@ const AddItemPage: React.FC = () => {
             return;
         }
 
+        const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'));
+
+        if (!vKey) {
+            navigate('/login');
+            return;
+        }
+
         const data = {
             name: ItemData.name,
             description: ItemData.description,
@@ -128,7 +135,7 @@ const AddItemPage: React.FC = () => {
             categoryId: ItemData.categoryId,
             image_path: responseUrl.url,
             author_id: parseInt(response.id),
-
+            vKey: vKey.split('=')[1]
         };
 
         try {

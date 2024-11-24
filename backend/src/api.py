@@ -38,68 +38,13 @@ app.add_middleware(
 async def root() -> dict:
     return {"message": "Oops, you are not supposed to be here"}
 
-"""
-    * THIS SECTION IS MAYBE WILL BE DEPRECATED AND MIGRATED TO WEBSOCKETS
-"""
-#------------------- CHAT -------------------#
 @app.post('/api/v1.0/chat/create')
 async def create_chat(chat: Chat) -> int:
     res = db.create_chat(**chat.dict())
     if res:
+        await manager.broadcast_chats(db, chat.user_from, chat.user_to)
         return res
     raise HTTPException(status_code=500, detail='Server error')
-
-@app.post('/api/v1.0/chat/delete')
-async def delete_chat(user : CookieChatUser) -> bool:
-    if db.delete_chat(user.chat_id, user.user_id, user.vKey):
-        return True
-    raise HTTPException(status_code=500, detail='Server error')
-
-@app.post('/api/v1.0/chat')
-async def get_chat(user : CookieChatUser) -> dict:
-    chat = db.get_chat(user.chat_id, user.user_id, user.vKey)
-    if chat:
-        return chat
-    raise HTTPException(status_code=500, detail='Server error')
-
-@app.post('/api/v1.0/user/chats')
-async def get_chats(user : CookieUser) -> list[dict]:
-    chats = db.get_chats(user.user_id, user.vKey)
-    if chats is not None:
-        return chats
-    raise HTTPException(status_code=500, detail='Server error')
-
-@app.post('/api/v1.0/chat/messages')
-async def get_messages(user : CookieChatUser) -> list[dict]:
-    messages = db.get_messages(user.chat_id, user.user_id, user.vKey)
-    if messages is not None:
-        return messages
-    raise HTTPException(status_code=500, detail='Server error')
-
-@app.post('/api/v1.0/message/create')
-async def create_message(message: ChatMessage) -> bool:
-    if db.create_message(**message.dict()):
-        return True
-    raise HTTPException(status_code=500, detail='Server error')
-
-@app.post('/api/v1.0/message/delete')
-async def delete_message(message : ChatMessageDelete) -> bool:
-    if db.delete_message(message.message_id, message.author_id, message.vKey):
-        return True
-    raise HTTPException(status_code=500, detail='Server error')
-
-@app.post('/api/v1.0/message/update')
-async def update_message(message: ChatMessageUpdate) -> bool:
-    if db.update_message(**message.dict()):
-        return True
-    raise HTTPException(status_code=500, detail='Server error')
-
-#------------------- CHAT END -------------------#
-
-"""
-    * THIS SECTION IS MAYBE WILL BE REPLACED OLD CHAT SECTION
-"""
-#------------------- NEW_CHAT -------------------#
 
 activeMessagesSockets, activeChatsSockets = [], []
 
@@ -136,7 +81,7 @@ async def user_chats(websocket: WebSocket) -> None:
             if not is_authorized:
                 user_id = data.get('user_id')
                 vKey = data.get('vKey')
-                if await manager.authorize(db, websocket, user_id, vKey):
+                if await manager.authorize(db, websocket, user_id, vKey, chat=True):
                     is_authorized = True
                     await websocket.send_json({'type' : 'chats', 'chats': db.get_chats(user_id, vKey)})
                 else:
@@ -144,7 +89,7 @@ async def user_chats(websocket: WebSocket) -> None:
                     break
 
             if is_authorized:
-                pass
+                await manager.parse_chats_action(db, websocket, data)
 
     except WebSocketDisconnect:
         await manager.user_closed_session(websocket)
@@ -249,7 +194,7 @@ async def user_logout(user : CookieUser) -> bool:
 
 @app.post('/api/v1.0/user/delete')
 async def delete_user(user : CookieUser) -> bool:
-    if db.delete_user():
+    if db.delete_user(user.user_id, user.vKey):
         return True
     raise HTTPException(status_code=500, detail='Server error')
 
@@ -270,7 +215,7 @@ async def get_item(item_id: int) -> dict:
 @app.post('/api/v1.0/item/create')
 async def create_item(item: Item) -> dict:
     if db.insert_item(**item.dict()):
-        return item
+        return item.dict()
     raise HTTPException(status_code=500, detail='Server error')
 
 

@@ -41,8 +41,6 @@ const ChatsPage: React.FC = () => {
 
     const [error, setError] = useState('');
 
-    const fetchInterval = useRef<number | NodeJS.Timeout | null>(null);
-
     const messageSocket = useRef<WebSocket | null>(null);
     const chatsSocket = useRef<WebSocket | null>(null);
 
@@ -127,27 +125,28 @@ const ChatsPage: React.FC = () => {
             return;
         }
 
-        const response = await fetch(API_BASE_URL + "/chat/delete", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({chat_id: chat_id, user_id: user_id, vKey: vKey})
-        });
+        if (!chat_id) {
+            return;
+        }
 
-        const result = await response.json();
+        const data = {
+            action: 'delete_chat',
+            chat_id: chat_id,
+            user_id: user_id,
+            vKey: vKey
+        }
 
-        if (response.ok && emptyChatContainer.current && chatContainer.current) {
+        chatsSocket.current?.send(JSON.stringify(data));
+
+        if (emptyChatContainer.current && chatContainer.current) {
+
             emptyChatContainer.current.style.display = "flex";
             chatContainer.current.style.display = "none";
 
-            if (fetchInterval.current) {
-                clearInterval(fetchInterval.current as number | NodeJS.Timeout);
-            }
-
-        } else {
-            setError(result.message);
         }
+
+        messageSocket.current?.close();
+
     }
 
     const handleDeleteMessage = async(event: React.MouseEvent) => {
@@ -344,9 +343,13 @@ const ChatsPage: React.FC = () => {
         }
 
         messageSocket.current.onclose = () => {
-            showError('Connection closed by server');
+            showError('Connection closed');
 
-            setupWebSocket();
+            if (chatContainer.current && emptyChatContainer.current) {
+                emptyChatContainer.current.style.display = "flex";
+                chatContainer.current.style.display = "none";
+            }
+
         }
         
     }, [navigate, chat_id, fetchMessages]);
@@ -476,6 +479,61 @@ const ChatsPage: React.FC = () => {
 
     } , [chats_state, navigate]);
 
+    const setUpChatsWebSocket = useCallback(async() => {
+
+        chatsSocket.current = new WebSocket(API_BASE_URL + "/new/chats");
+
+        chatsSocket.current.onopen = async() => {
+            const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
+            const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
+
+            if (!user_id || !vKey) {
+                startTransition(() => navigate('/login'));
+                return;
+            }
+            
+            try {
+                if (chatsSocket.current) chatsSocket.current.send(JSON.stringify({user_id: user_id, vKey: vKey}));
+            } catch (err) {
+                console.log(err);
+            }
+
+        };
+
+        chatsSocket.current.onmessage = async(event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'system') {
+
+                if (data.message === 'Unauthorized') {
+                    startTransition(() => navigate('/login'));
+                } else if (data.message === 'NOK') {
+                    showError('An error occurred');
+                } else if (data.message === 'Chat deleted') {
+                    if (emptyChatContainer.current && chatContainer.current) {
+                        emptyChatContainer.current.style.display = "flex";
+                        chatContainer.current.style.display = "none";
+                    }
+
+                    if (messageSocket.current) messageSocket.current.close();
+                    
+                }
+
+            } else if (data.type === 'chats') {
+
+                await fetchChats(data.chats);
+
+            }
+        }
+
+        chatsSocket.current.onclose = () => {
+            showError('Connection closed by server');
+
+            setUpChatsWebSocket();
+        }
+
+    }, [navigate, fetchChats]);
+
+
     useEffect(() => {
 
         if (chatContainer.current && emptyChatContainer.current) {
@@ -493,56 +551,11 @@ const ChatsPage: React.FC = () => {
             }
         }
 
-    } , [navigate]);
+    } , []);
 
     useEffect(() => {
-        chatsSocket.current = new WebSocket(API_BASE_URL + "/new/chats");
 
-        chatsSocket.current.onopen = () => {
-            const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
-            const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
-
-            if (!user_id || !vKey) {
-                startTransition(() => navigate('/login'));
-                return;
-            }
-
-            if (chatsSocket.current) chatsSocket.current.send(JSON.stringify({user_id: user_id, vKey: vKey}));
-        };
-
-        chatsSocket.current.onmessage = async(event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'system') {
-
-                if (data.message === 'Unauthorized') {
-                    startTransition(() => navigate('/login'));
-                } else if (data.message === 'NOK') {
-                    showError('An error occurred');
-                }
-
-            } else if (data.type === 'chats') {
-
-                await fetchChats(data.chats);
-
-            }
-        }
-
-        chatsSocket.current.onclose = () => {
-            showError('Connection closed by server');
-            chatsSocket.current = new WebSocket(API_BASE_URL + "/new/chats");
-
-            chatsSocket.current.onopen = () => {
-                const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
-                const vKey = document.cookie.split(';').find(cookie => cookie.includes('vKey'))?.split('=')[1] || null;
-
-                if (!user_id || !vKey) {
-                    startTransition(() => navigate('/login'));
-                    return;
-                }
-
-                if (chatsSocket.current) chatsSocket.current.send(JSON.stringify({user_id: user_id, vKey: vKey}));
-            }
-        }
+        setUpChatsWebSocket();
 
         return () => {
             if (chatsSocket.current) {
@@ -550,7 +563,7 @@ const ChatsPage: React.FC = () => {
             }
         }
 
-    } , [navigate, fetchChats]);
+    } , []);
 
     useEffect(() => {
         if (headerRef.current) {

@@ -465,7 +465,11 @@ class Database:
             print(e)
             return False
         
-    def delete_user(self, user_id : int) -> bool:
+    def delete_user(self, user_id : int, vKey : str) -> bool:
+        """ delete a single user from the users table """
+
+        if not self.check_validation_key(user_id, vKey):
+            raise HTTPException(status_code=401, detail='Unauthorized')
 
         try:
                 
@@ -583,10 +587,10 @@ class Database:
         """ delete a single chat """
 
         if not self.check_validation_key(user_id, vKey):
-            raise HTTPException(status_code=401, detail='Unauthorized')
+            return False
         
         if not self.get_chat(chat_id, user_id, vKey):
-            raise HTTPException(status_code=404, detail='Chat not found')
+            return False
         
         try:
 
@@ -595,7 +599,7 @@ class Database:
             cursor.execute('SELECT user_from, user_to FROM chats WHERE chat_id = %s', (chat_id,))
             row = cursor.fetchone()
 
-            if row[0] != user_id and row[1] != user_id:
+            if row[0] != int(user_id) and row[1] != int(user_id):
                 return False
 
             cursor.execute('DELETE FROM chats WHERE chat_id = %s', (chat_id,))

@@ -37,9 +37,8 @@ class ItemUpdate(BaseModel):
     image_path: Optional[str]
 
 class User(BaseModel):
-    username: str
-    password: Optional[str] = None
-    email: Optional[str] = None
+    password: str
+    email: str
 
 class UserVerify(BaseModel):
     email: str
@@ -89,5 +88,16 @@ class ChatMessageDelete(BaseModel):
     message_id: int
     author_id: int
     vKey: str
+
+class Token(BaseModel):
+    token: str
+
+class PasswordReset(BaseModel):
+    token : str
+    password : str
+
+class Report(BaseModel):
+    item_id: int
+    reason: str
 
     

@@ -138,6 +138,20 @@ class Database:
                             DELETE FROM codes WHERE expires_at < NOW();
             ''')
 
+            cursor.execute('''CREATE TABLE IF NOT EXISTS reset_links (
+                            id INT PRIMARY KEY AUTO_INCREMENT,
+                            time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            email TEXT NOT NULL,
+                            link TEXT NOT NULL,
+                            expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+            ''')
+
+            cursor.execute('''CREATE EVENT IF NOT EXISTS autodelete_reset_links
+                            ON SCHEDULE EVERY 10 MINUTE
+                            DO
+                            DELETE FROM reset_links WHERE expires_at < NOW();
+            ''')
+
             self.conn.commit()
 
             self.mailer = Mailer()
@@ -462,10 +476,8 @@ class Database:
                 return -1
             
             else:
-                # cursor.execute('INSERT INTO users (username, password_hash, email) VALUES (%s, %s, %s)',
-                #             (row[2], row[3], row[1]))
-
-                print(f"INSERT INTO users (username, password_hash, email) VALUES ({row[4]}, {row[5]}, {row[2]})")
+                cursor.execute('INSERT INTO users (username, password_hash, email) VALUES (%s, %s, %s)',
+                            (row[4], row[5], row[2]))
 
                 self.conn.commit()
 
@@ -513,6 +525,103 @@ class Database:
             self.log_error('Cannot resend code')
             return False
         
+    def forgot_password(self, email: str, origin: str) -> bool:
+        """ send password reset link """
+        try:
+
+            cursor = self.conn.cursor()
+
+            if not email:
+                self.log_error('Empty email')
+                return False
+            
+            cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
+            row = cursor.fetchone()
+
+            if not row:
+                self.log_error('User not found')
+                raise HTTPException(status_code=404, detail='User not found')
+
+            hasher = Hasher()
+            reset_link = hasher.generate_link(origin + '/reset-password/?token=')
+
+
+            cursor.execute('SELECT * FROM reset_links WHERE email = %s', (email,))
+
+            row = cursor.fetchone()
+
+            if row:
+                cursor.execute('DELETE FROM reset_links WHERE email = %s', (email,))
+
+            cursor.execute('INSERT INTO reset_links (email, link, expires_at) VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL 15 MINUTE))', (email, reset_link))
+
+            self.conn.commit()
+
+            if not self.mailer.send_password_reset(email, reset_link):
+                self.log_error('Cannot send reset link')
+                return False
+            
+            return True
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot send reset link')
+            return False
+
+    def check_reset_token(self, token: str) -> dict:
+        """ check if reset token is valid """
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT * FROM reset_links WHERE SUBSTRING_INDEX(link, \'=\', -1) = %s', (token,))
+
+            row = cursor.fetchone()
+
+            if not row:
+                self.log_error('Invalid token')
+                return {}
+
+            return {'email': row[2]}
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot check reset token')
+            return {}
+        
+    def reset_password(self, **password) -> bool:
+        """ reset user password """
+        try:
+
+            cursor = self.conn.cursor()
+
+            hasher = Hasher()
+            pwd_hash = hasher.hash_password(password['password'])
+
+            email = self.check_reset_token(password['token']).get('email')
+
+            if email == {}:
+                self.log_error('Invalid token')
+                return False
+            
+            cursor.execute('UPDATE users SET password_hash = %s WHERE email = %s', (pwd_hash, email))
+
+            self.conn.commit()
+
+            cursor.execute('DELETE FROM reset_links WHERE email = %s', (email,))
+
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot reset password')
+            return False
+        
     def login_user(self, **user) -> int:
         """ login a user and return user id if correct username and password are provided, 
         if user does not exist return -1, if password is incorrect return -2, else error return -3 """
@@ -520,7 +629,10 @@ class Database:
 
             cursor = self.conn.cursor()
 
-            cursor.execute('SELECT * FROM users WHERE username = %s OR email = %s', (user['username'], user['email']))
+            if user['email'] == 'admin':
+                cursor.execute('SELECT * FROM users WHERE username = %s', (user['email'],))
+            else:
+                cursor.execute('SELECT * FROM users WHERE email = %s', (user['email'],))
 
             row = cursor.fetchone()
 
@@ -986,7 +1098,8 @@ class Database:
             self.log_error('Cannot fetch stats')
             return {}
         
-    def report_create(self) -> bool:
+    def report_create(self, **report) -> bool:
+        """ create a new report """
         pass
 
     def report_resolve(self) -> bool:

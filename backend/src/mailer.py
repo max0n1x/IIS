@@ -40,4 +40,29 @@ class Mailer:
         except Exception as e:
             print(e)
             return False
+        
+    def send_password_reset(self, to : str, link : str) -> bool:
+        msg = MIMEMultipart()
+        msg['From'] = formataddr((str(Header('Password reset', 'utf-8')), MAIL_USER))
+        msg['To'] = to
+        msg['Subject'] = 'Password reset'
+
+        html_content = f"""
+                <html>
+                <head></head>
+                <body>
+                    <p>Click the link below to reset your password:</p>
+                    <a href="{link}">{link}</a>
+                </body>
+                </html>
+        """
+        msg.attach(MIMEText(html_content, 'html'))
+
+        try:
+            self.server.send_message(msg)
+            del msg
+            return True
+        except Exception as e:
+            print(e)
+            return False
 

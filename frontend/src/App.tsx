@@ -20,13 +20,15 @@ import ItemsList from './components/ItemsList/ItemsList';
 import AddItemPage from './components/AddItem/AddItemPage';
 import EditItemPage from './components/EditItem/EditItemPage';
 import ChatsPage from './components/Chats/ChatsPage'
-import Page404 from './components/ErrorPages/Page404';
-import AdminPage from './components/Admin/AdminPage';
-import './components/GlobalStyles.css';
-import './App.css';
 import VerifyPage from './components/MailVerify/VerifyPage';
 import ForgotPasswordPage from './components/ForgotPassword/ForgotPasswordPage';
 import ChangePasswordPage from './components/ChangePassword/ChangePasswordPage';
+import AdminPage from './components/Admin/AdminPage';
+import ResetPasswordPage from './components/ResetPassword/ResetPasswordPage';
+import Page404 from './components/ErrorPages/Page404';
+import './components/GlobalStyles.css';
+import './App.css';
+
 
 const App = () => {
   return (
@@ -50,11 +52,12 @@ const App = () => {
         <Route path="/user/edit-item" element={<EditItemPage />} />
         <Route path="/item" element={<ItemPage />} />
         <Route path="/user/chats" element={<ChatsPage />} />
-        <Route path="*" element={<Page404 />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/verify" element={<VerifyPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/change-password" element={<ChangePasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="*" element={<Page404 />} />
       </Routes>
     </BrowserRouter>
   );

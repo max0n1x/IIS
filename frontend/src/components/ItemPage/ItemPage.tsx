@@ -27,7 +27,9 @@ const ItemPage: React.FC = () => {
     const [ItemPrice, setItemPrice] = useState("");
     const [ItemImage, setItemImage] = useState("");
     const [ItemSeller, setItemSeller] = useState("");
-    const [ReportReason, setReportReason] = useState("");  // State for report reason
+    const [ReportReason, setReportReason] = useState("");
+    const [adminLoggedIn, setAdminLoggedIn] = useState(false);
+    const [userLoggedIn, setUserLoggedIn] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -164,8 +166,21 @@ const ItemPage: React.FC = () => {
             setItemSeller(item.author_id);
         });
 
-        checkLogin(loggedIn, logInRef);
+        const loggedInCheck = async () => {
+            await checkLogin(loggedIn, logInRef).then((result) => {
+                if (result === true) {
+                    setUserLoggedIn(true);
+                } else if (result === 'admin') {
+                    setAdminLoggedIn(true);
+                } else {
+                    setUserLoggedIn(false);
+                    setAdminLoggedIn(false);
+                }
+            }
+        );}
 
+        loggedInCheck();
+                
     }, [navigate, location, item_id, ItemSeller]);
 
     return (
@@ -201,30 +216,32 @@ const ItemPage: React.FC = () => {
                     </div>
                 </div>
 
-                <input type="submit" className={ItemPageStyle["contact-seller-button"]} ref={contactRef}
-                    onClick={CreateChat} value="Contact seller" />
+                {(adminLoggedIn || userLoggedIn) && (
+                    <input type="submit" className={ItemPageStyle["contact-seller-button"]} ref={contactRef}
+                        onClick={CreateChat} value="Contact seller" />
+                )}
 
-                {/* Report section */}
-                <div className={ItemPageStyle["report-section"]}>
-                    <label htmlFor="report-reason" className={ItemPageStyle["report-label"]}>Report this item:</label>
-                    <select
-                        id="report-reason"
-                        ref={reportRef}
-                        className={ItemPageStyle["report-dropdown"]}
-                        onChange={(e) => setReportReason(e.target.value)}
-                    >
-                        <option value="">Select reason</option>
-                        <option value="Inappropriate content">Inappropriate content</option>
-                        <option value="Fake item">Fake item</option>
-                        <option value="Spam or scam">Spam or scam</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    <button className={ItemPageStyle["report-button"]} onClick={handleReport}>
-                        Report Item
-                    </button>
-                </div>
+                {userLoggedIn && (
+                    <div className={ItemPageStyle["report-section"]}>
+                        <label htmlFor="report-reason" className={ItemPageStyle["report-label"]}>Report this item:</label>
+                        <select
+                            id="report-reason"
+                            ref={reportRef}
+                            className={ItemPageStyle["report-dropdown"]}
+                            onChange={(e) => setReportReason(e.target.value)}
+                        >
+                            <option value="">Select reason</option>
+                            <option value="Inappropriate content">Inappropriate content</option>
+                            <option value="Fake item">Fake item</option>
+                            <option value="Spam or scam">Spam or scam</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <button className={ItemPageStyle["report-button"]} onClick={handleReport}>
+                            Report Item
+                        </button>
+                    </div>
+                )}
             </div>
-
             <Contacts />
         </div>
     );

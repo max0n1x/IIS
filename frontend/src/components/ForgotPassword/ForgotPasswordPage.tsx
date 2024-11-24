@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ForgotPasswordPageStyle from './ForgotPasswordPage.module.css';
-import { fixElementHeight, API_BASE_URL, GetUserInformation } from '../Utils';
+import { fixElementHeight, API_BASE_URL} from '../Utils';
 import '../GlobalStyles.css';
 
 const ForgotPasswordPage: React.FC = () => {
@@ -18,20 +18,30 @@ const ForgotPasswordPage: React.FC = () => {
     const headerRef = useRef<HTMLDivElement | null>(null);
     const navigate = useNavigate();
 
+
+    const validateEmail = (email : string) => {
+        const re = /\S+@\S+\.\S+/;
+        return re.test(email);
+    };
+
     const handleSubmit = async () => {
+
         if (!email) {
             setError('Email cannot be empty');
             return;
         }
 
-        const data = { email };
-
-        const validateEmail = (email : string) => {
-            const re = /\S+@\S+\.\S+/;
-            return re.test(email);
+        if (!validateEmail(email)) {
+            setError('Invalid email address');
+            return;
         }
 
+        const data = {
+            email: email,
+        };
+
         try {
+
             const response = await fetch(API_BASE_URL + "/forgot-password", {
                 method: 'POST',
                 headers: {
@@ -41,16 +51,32 @@ const ForgotPasswordPage: React.FC = () => {
             });
 
             if (response.ok) {
+
                 setSuccessMessage("Password reset link has been sent to your email!");
                 setError('');
-                setTimeout(() => navigate('/login'), 2000); // Redirect after 2 seconds
+
             } else {
-                setError('Failed to send reset email');
+
+                setError('Failed to send reset email: ' + response.statusText);
+                setSuccessMessage('');
+
             }
         } catch (err) {
+            
+            setSuccessMessage('');
             setError('Failed to connect to the server');
+
         }
+
     };
+
+    useEffect(() => {
+
+        if (headerRef.current) {
+            fixElementHeight(headerRef.current);
+        }
+
+    }, [navigate]);
 
     return (
         <div className={ForgotPasswordPageStyle['page-container']}>

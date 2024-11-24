@@ -50,6 +50,9 @@
     color: var(--blue);
     font-family: var(--font-inria-sans);
     font-weight: 700;
+    font-size: 1.5em;
+    padding-left: 20px;
+    box-sizing: border-box;
 }
 
 .username-input {

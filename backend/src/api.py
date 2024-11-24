@@ -8,7 +8,7 @@
 
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, Response, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, UploadFile, Response, WebSocket, WebSocketDisconnect, Request
 import uvicorn
 from src.config import ENDPOINT_HOST, ENDPOINT_PORT
 from src.sql import Database
@@ -139,6 +139,27 @@ async def resend_code(email : UserEmail) -> bool:
         return True
     raise HTTPException(status_code=500, detail='Server error')
 
+@app.post('/api/v1.0/forgot-password')
+async def forgot_password(email : UserEmail, request: Request) -> bool:
+    """ send password reset code """
+    if db.forgot_password(email.email, request.headers.get('origin')):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
+
+@app.post('/api/v1.0/reset-password/check')
+async def check_reset_code(token : Token) -> dict:
+    """ check if reset code is valid """
+    email = db.check_reset_token(token.token)
+    if email != {}:
+        return email
+    raise HTTPException(status_code=400, detail='Invalid token')
+
+@app.post('/api/v1.0/reset-password')
+async def reset_password(password : PasswordReset) -> bool:
+    """ reset user password """
+    if db.reset_password(**password.dict()):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
 
 @app.post('/api/v1.0/login')
 async def user_login(user : User, response: Response) -> dict:

@@ -10,7 +10,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VerifyPageStyle from './VerifyPage.module.css';
-import { fixElementHeight, API_BASE_URL, GetUserInformation } from '../Utils';
+import { fixElementHeight, API_BASE_URL } from '../Utils';
 import '../GlobalStyles.css';
 
 const VerifyPage: React.FC = () => {

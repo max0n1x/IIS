@@ -20,7 +20,7 @@ const LoginPage: React.FC = () => {
     
     // State variables for managing user input and authentication error messages.
     const [error, setError] = useState('');
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
     // useRef hook for referencing DOM elements.
@@ -68,7 +68,7 @@ const LoginPage: React.FC = () => {
     // Async function to handle the login process.
     const login = async () => {
         const data = {
-            username: username,
+            email : email,
             password: password,
         };
     
@@ -119,11 +119,11 @@ const LoginPage: React.FC = () => {
             <div className={LoginPageStyle['login-form']} id="login-form"></div>
 
             {/* Username input field */}
-            <label htmlFor="username" 
-                    className={LoginPageStyle['username-label']}>Login or email:</label>
-            <input type="text" name="username" 
+            <label htmlFor="email"
+                    className={LoginPageStyle['username-label']}>Email:</label>
+            <input type="email" name="email"
                     className={LoginPageStyle['username-input']} id="username"
-                    onChange={e => setUsername(e.target.value)} />
+                    onChange={e => setEmail(e.target.value)} />
 
             {/* Password input field with dynamic visibility feature */}
             <label htmlFor="password" 

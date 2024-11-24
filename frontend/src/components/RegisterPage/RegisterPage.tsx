@@ -10,7 +10,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RegisterPageStyle from './RegisterPage.module.css';
-import { fixElementHeight, API_BASE_URL, GetUserInformation } from '../Utils';
+import { fixElementHeight, API_BASE_URL } from '../Utils';
 import '../GlobalStyles.css';
 
 const RegisterPage: React.FC = () => {
@@ -24,9 +24,14 @@ const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
 
     const validateEmail = (email : string) => {
-      const re = /\S+@\S+\.\S+/;
-      return re.test(email);
+		const re = /\S+@\S+\.\S+/;
+		return re.test(email);
     };
+
+	// const checkPassword = (password : string) => {
+	// 	const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
+	// 	return re.test(password);
+	// }
 
     useEffect(() => {
 
@@ -39,8 +44,8 @@ const RegisterPage: React.FC = () => {
     const handleRegister = async () => {
 
         if (!username || !password || !email) {
-          setError("Username, password, and email cannot be empty");
-          return;
+			setError("Username, password, and email cannot be empty");
+			return;
         } 
 
         if (password !== confirmPassword) {
@@ -52,6 +57,11 @@ const RegisterPage: React.FC = () => {
           setError("Invalid email address");
           return;
         }
+
+		// if (!checkPassword(password)) {
+		//   setError("Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number");
+		//   return;
+		// }
     
         const data = {
           username: username,

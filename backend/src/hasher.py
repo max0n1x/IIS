@@ -26,3 +26,6 @@ class Hasher:
     
     def generate_code(self) -> str:
         return ''.join(random.choices(string.ascii_letters + string.digits, k=6) )
+    
+    def generate_link(self, base_url: str) -> str:
+        return base_url + ''.join(random.choices(string.ascii_letters + string.digits, k=64))

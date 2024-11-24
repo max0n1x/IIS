@@ -20,13 +20,17 @@ const AdminPage: React.FC = () => {
     const navigate = useNavigate();
 
     const [websiteStats, setWebsiteStats] = useState<{
-        visits: number;
+        totalVisits: number;
+        visits24h: number;
         registeredUsers: number;
         itemsForSale: number;
+        errorsLogged: number;
     }>({
-        visits: 0,
+        totalVisits: 0,
+        visits24h: 0,
         registeredUsers: 0,
         itemsForSale: 0,
+        errorsLogged: 0,
     });
 
     const [importantMsg, setImportantMsg] = useState<string | boolean>("");
@@ -118,10 +122,11 @@ const AdminPage: React.FC = () => {
 
                 <h1 className={AdminPageStyles["page-title"]}>Admin Dashboard</h1>
 
+                {/* Website Statistics */}
                 <div className={AdminPageStyles["stats-container"]}>
                     <div className={AdminPageStyles["stat"]}>
-                        <label>Website Visits:</label>
-                        <div className={AdminPageStyles["stat-value"]}>{websiteStats.visits}</div>
+                        <label>Visits (Last 24h):</label>
+                        <div className={AdminPageStyles["stat-value"]}>{websiteStats.visits24h}</div>
                     </div>
                     <div className={AdminPageStyles["stat"]}>
                         <label>Registered Users:</label>
@@ -130,6 +135,10 @@ const AdminPage: React.FC = () => {
                     <div className={AdminPageStyles["stat"]}>
                         <label>Items for Sale:</label>
                         <div className={AdminPageStyles["stat-value"]}>{websiteStats.itemsForSale}</div>
+                    </div>
+                    <div className={AdminPageStyles["stat"]}>
+                        <label>Errors Logged:</label>
+                        <div className={AdminPageStyles["stat-value"]}>{websiteStats.errorsLogged}</div>
                     </div>
                 </div>
 

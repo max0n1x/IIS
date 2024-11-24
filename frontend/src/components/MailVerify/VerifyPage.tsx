@@ -16,28 +16,13 @@ import '../GlobalStyles.css';
 const VerifyPage: React.FC = () => {
 
     const [code, setCode] = useState<string>('');
+    const [email, setEmail] = useState<string>('');
     const [error, setError] = useState<string>('');
     const [successMessage, setSuccessMessage] = useState<string>('');
     const headerRef = useRef<HTMLDivElement | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
-
-        const checkIfLoggedIn = async () => {
-            await GetUserInformation().then((data) => {
-                if (data) {
-                    navigate('/');
-                }
-            });
-        };
-
-        const cookies = document.cookie.split(';');
-        const user_id = cookies.find(cookie => cookie.includes('user_id'));
-        const vKey = cookies.find(cookie => cookie.includes('vKey'));
-
-        if (cookies && user_id && vKey) {
-            checkIfLoggedIn();
-        }
 
         if (headerRef.current) {
             fixElementHeight(headerRef.current);
@@ -46,12 +31,16 @@ const VerifyPage: React.FC = () => {
     }, [navigate]);
 
     const handleVerify = async () => {
+
         if (!code) {
             setError("Code cannot be empty");
             return;
         }
 
-        const data = { code };
+        const data = {
+            code: code,
+            email: email
+        };
 
         try {
             const response = await fetch(API_BASE_URL + "/verify", {
@@ -65,7 +54,7 @@ const VerifyPage: React.FC = () => {
             if (response.ok) {
                 setSuccessMessage("Verification successful!");
                 setError('');
-                setTimeout(() => navigate('/login'), 2000); // Redirect after 2 seconds
+                setTimeout(() => navigate('/login'), 2000);
             } else {
                 setError("Invalid verification code");
             }
@@ -93,6 +82,23 @@ const VerifyPage: React.FC = () => {
             setError("Failed to connect to the server");
         }
     };
+
+    useEffect(() => {
+        const queryParams = new URLSearchParams(window.location.search);
+
+        const email = queryParams.get('email');
+        if (email) setEmail(email);
+        const username = queryParams.get('username');
+
+        console.log(email, username);
+
+        if (!email || !username) {
+            navigate('/register');
+        }
+
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+    }, [navigate]);
 
     return (
         <div className={VerifyPageStyle['page-container']}>

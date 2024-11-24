@@ -66,7 +66,7 @@ const RegisterPage: React.FC = () => {
         };
     
         try {
-          const response = await fetch(API_BASE_URL + "/register", {
+          const response = await fetch(API_BASE_URL + "/code", {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -75,7 +75,7 @@ const RegisterPage: React.FC = () => {
           });
     
           if (response.ok) {
-            navigate('/login');
+            navigate('/verify?email=' + email + '&username=' + username);
           } else if (response.status === 409) {
             setError("Username already exists");
           } else if (response.status === 500) {

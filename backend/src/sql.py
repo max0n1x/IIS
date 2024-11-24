@@ -14,8 +14,7 @@ from src.config import DATABASE_HOST, DATABASE_PORT, DATABASE_USER, DATABASE_PAS
 from src.hasher import Hasher
 from src.models import Optional
 from fastapi import HTTPException
-import random
-
+from src.mailer import Mailer
 
 class Database:
 
@@ -132,7 +131,15 @@ class Database:
                             password_hash TEXT NOT NULL);
             ''')
 
+            cursor.execute('''CREATE EVENT IF NOT EXISTS autodelete_codes
+                            ON SCHEDULE EVERY 10 MINUTE
+                            DO
+                            DELETE FROM codes WHERE expires_at < NOW();
+            ''')
+
             self.conn.commit()
+
+            self.mailer = Mailer()
 
         except Error as e:
             print(e)
@@ -395,7 +402,7 @@ class Database:
             self.log_error('Cannot update item')
             return False
         
-    def register_user(self, **user) -> int:
+    def request_code(self, **user) -> int:
         """ register a new user if username is not taken """
         try:
 
@@ -415,10 +422,14 @@ class Database:
             hasher = Hasher()
             hash = hasher.hash_password(user['password'])
 
+            code = hasher.generate_code()
 
+            if not self.mailer.send_code(user['email'], code):
+                self.log_error('Cannot send code')
+                return -3
 
-            cursor.execute('INSERT INTO codes (code, username, password_hash) VALUES (%s, %s, %s)', 
-                        (hasher.generate_code(), user['username'], hash))
+            cursor.execute('INSERT INTO codes (code, expires_at, username, password_hash) VALUES (%s, DATE_ADD(NOW(), INTERVAL 15 MINUTE), %s, %s)',
+                        (code, user['username'], hash))
 
             self.conn.commit()
 
@@ -429,6 +440,40 @@ class Database:
             print(e)
             self.log_error('Cannot register user')
             return -3
+
+    def verify_user(self, **user) -> int:
+        """ verify user code """
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT * FROM codes WHERE code = %s AND email = %s', (user['code'], user['email']))
+            row = cursor.fetchone()
+
+            if not row:
+                self.log_error('Invalid code')
+                return -1
+            
+            else:
+                cursor.execute('INSERT INTO users (username, password_hash, email) VALUES (%s, %s, %s)',
+                            (row[2], row[3], row[1]))
+
+                self.conn.commit()
+
+                cursor.execute('DELETE FROM codes WHERE email = %s', (user['email'],))
+
+                self.conn.commit()
+
+                return 0
+            
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot register user')
+            return -3
+        
+    def resend_code(self, email: str) -> bool:
+        pass
         
     def login_user(self, **user) -> int:
         """ login a user and return user id if correct username and password are provided, 

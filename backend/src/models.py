@@ -41,6 +41,10 @@ class User(BaseModel):
     password: Optional[str] = None
     email: Optional[str] = None
 
+class UserVerify(BaseModel):
+    email: str
+    code: str
+
 class CookieUser(BaseModel):
     user_id: int
     vKey: str

@@ -12,23 +12,22 @@ from src.config import MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASSWORD
 
 class Mailer:
     def __init__(self):
-        self.server = smtplib.SMTP("smtp.gmail.com", 587)
+        self.server = smtplib.SMTP(MAIL_HOST, MAIL_PORT)
         self.server.starttls()
-        # self.server.login(""
+        self.server.login(MAIL_USER, MAIL_PASSWORD)
 
-    def send(self, to: str, subject: str, body: str, attachments: list[str] = []) -> None:
+    def send_code(self, to : str, code : str) -> bool:
         msg = MIMEMultipart()
-        msg['From'] = formataddr((str(Header('Garage sale', 'utf-8')), MAIL_USER))
+        msg['From'] = formataddr((str(Header('Email verification', 'utf-8')), MAIL_USER))
         msg['To'] = to
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
+        msg['Subject'] = 'Verification code'
+        msg.attach(MIMEText(f'Your verification code is: {code}', 'plain'))
 
-        for attachment in attachments:
-            with open(attachment, 'rb') as f:
-                part = MIMEApplication(f.read(), Name=attachment)
-                part['Content-Disposition'] = f'attachment; filename="{attachment}"'
-                msg.attach(part)
-
-        self.server.send_message(msg)
-        del msg
+        try:
+            self.server.send_message(msg)
+            del msg
+            return True
+        except Exception as e:
+            print(e)
+            return False
 

@@ -108,16 +108,27 @@ async def unauthorized_user() -> bool:
     raise HTTPException(status_code=500, detail='Server error')
 
 
-@app.post('/api/v1.0/register')
+@app.post('/api/v1.0/code')
 async def user_registration(user : User) -> bool:
     """ register a new user """
-    status = db.register_user(**user.dict())
+    status = db.request_code(**user.dict())
     if status == 0:
         return True
     elif status == -1:
         raise HTTPException(status_code=409, detail='Username already taken')
     elif status == -2:
         raise HTTPException(status_code=400, detail='Username or password is empty')
+    else:
+        raise HTTPException(status_code=500, detail='Server error')
+    
+@app.post('/api/v1.0/verify')
+async def verify_user(user : User) -> bool:
+    """ verify user code """
+    status = db.verify_user(**user.dict())
+    if status == 0:
+        return True
+    elif status == -1:
+        raise HTTPException(status_code=400, detail='Code is incorrect')
     else:
         raise HTTPException(status_code=500, detail='Server error')
 

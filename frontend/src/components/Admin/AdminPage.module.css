@@ -8,7 +8,7 @@
 
 .page-title {
     position: absolute;
-    top: 6%;
+    top: 7%;
     left: 50%;
     transform: translate(-50%, 0);
     font-size: 2.5em;
@@ -27,7 +27,7 @@
     display: flex;
     flex-direction: column;
     gap: 15px; /* Reduced gap between stats */
-    margin-top: 7%; /* Adds spacing from top */
+    margin-top: 9%; /* Adds spacing from top */
 }
 
 .stat {

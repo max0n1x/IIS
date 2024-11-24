@@ -1,0 +1,134 @@
+.main-container {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.page-title {
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    font-size: 2.5em;
+    font-weight: 800;
+    color: var(--black);
+    text-align: center;
+}
+
+.stats-container {
+    width: 70%;
+    height: 40%;
+    top: 35%;
+    left: 0%;
+    position: absolute;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--white);
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.stat {
+    background-color: var(--titanium);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--br-xl);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.stat:hover {
+    cursor: default;
+    background-color: #e0e0e0;
+}
+
+.stat label {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--blue);
+    margin-bottom: 10px;
+}
+
+.stat-value {
+    font-size: 2em;
+    font-weight: 800;
+    color: var(--green);
+}
+
+.actions-container {
+    width: 50%;
+    height: 10%;
+    top: 70%;
+    left: 10%;
+    position: absolute;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.action-button {
+    width: 40%;
+    height: 100%;
+    background-color: var(--titanium);
+    border-radius: var(--br-xl);
+    border: none;
+    outline: none;
+    font-size: 1.5em;
+    font-weight: 700;
+    text-align: center;
+    color: var(--black);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.action-button:hover {
+    background-color: #bfbfbf;
+    color: var(--blue);
+}
+
+.action-button:active {
+    background-color: #a6a6a6;
+    color: var(--blue);
+}
+
+.important-message {
+    position: absolute;
+    top: 80%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 255, 0, 0.1);
+    color: green;
+    border: 2px solid green;
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-size: 1.5em;
+    text-align: center;
+    opacity: 0.8;
+    box-shadow: 0px 4px 8px rgba(0, 128, 0, 0.2);
+}
+
+.error {
+    position: absolute;
+    top: 85%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 0, 0, 0.1);
+    color: red;
+    border: 2px solid red;
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-size: 1.5em;
+    text-align: center;
+    opacity: 0.8;
+    box-shadow: 0px 4px 8px rgba(255, 0, 0, 0.2);
+}

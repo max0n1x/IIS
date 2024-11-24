@@ -38,35 +38,49 @@ const AdminPage: React.FC = () => {
 
     const handleLogOutClick = async () => {
         const cookies = document.cookie.split(';');
-        const userId = cookies.find(cookie => cookie.includes('user_id'))?.split('=')[1];
-        const vKey = cookies.find(cookie => cookie.includes('vKey'))?.split('=')[1];
 
-        if (!userId || !vKey) {
+        if(!cookies){
             startTransition(() => { navigate('/login'); });
             return;
         }
 
-        const data = { user_id: userId, vKey: vKey };
+        const userId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if(!userId || !vKey){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const data = {
+            user_id : userId.split('=')[1],
+            vKey : vKey.split('=')[1]
+        };
 
         try {
-            const response = await fetch(`${API_BASE_URL}/admin/logout`, {
+            const response = await fetch(API_BASE_URL + "/user/logout", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
             });
 
             if (response.ok) {
                 document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
                 document.cookie = "vKey=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                navigate('/login');
+                navigate('/');
             } else {
-                throw new Error('Failed to log out');
+                throw new Error('Something went wrong');
             }
+
         } catch (err) {
-            console.error("Error:", err);
+            console.error('Error:', err);
             setError("Failed to connect to the server");
         }
-    };
+
+        startTransition(() => { navigate('/'); });
+    }
 
     const fetchWebsiteStats = async () => {
         try {

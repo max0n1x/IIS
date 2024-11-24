@@ -24,6 +24,7 @@ import Page404 from './components/ErrorPages/Page404';
 import AdminPage from './components/Admin/AdminPage';
 import './components/GlobalStyles.css';
 import './App.css';
+import VerifyPage from './components/MailVerify/VerifyPage';
 
 const App = () => {
   return (
@@ -49,6 +50,7 @@ const App = () => {
         <Route path="/user/chats" element={<ChatsPage />} />
         <Route path="*" element={<Page404 />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/verify" element={<VerifyPage />} />
       </Routes>
     </BrowserRouter>
   );

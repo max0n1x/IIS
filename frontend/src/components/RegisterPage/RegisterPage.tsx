@@ -1,6 +1,6 @@
 /*
  * Project: IIS project - Garage sale website
- * @file RegisterPage.js
+ * @file RegisterPage.tsx
 
  * @brief ReactJS component of the register page of the website
 
@@ -15,11 +15,12 @@ import '../GlobalStyles.css';
 
 const RegisterPage: React.FC = () => {
 
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState('');
-    const headerRef = useRef(null);
+    const [username, setUsername] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [confirmPassword, setConfirmPassword] = useState<string>('');
+    const [email, setEmail] = useState<string>('');
+    const [error, setError] = useState<string>('');
+    const headerRef = useRef<HTMLDivElement | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -29,8 +30,8 @@ const RegisterPage: React.FC = () => {
                 if (data) {
                     navigate('/');
                 }
-            }
-        );};
+            });
+        };
 
         const cookies = document.cookie.split(';');
         const user_id = cookies.find(cookie => cookie.includes('user_id'));
@@ -48,8 +49,8 @@ const RegisterPage: React.FC = () => {
 
     const handleRegister = async () => {
 
-        if (!username || !password) {
-          setError("Username or password cannot be empty");
+        if (!username || !password || !email) {
+          setError("Username, password, and email cannot be empty");
           return;
         } 
 
@@ -61,6 +62,7 @@ const RegisterPage: React.FC = () => {
         const data = {
           username: username,
           password: password,
+          email: email,
         };
     
         try {
@@ -79,7 +81,7 @@ const RegisterPage: React.FC = () => {
           } else if (response.status === 500) {
             setError("Server error");
           } else if (response.status === 400) {
-            setError("Username or password cannot be empty");
+            setError("Username, password, or email cannot be empty");
           } else {
             throw new Error('Something went wrong');
           }
@@ -101,12 +103,16 @@ const RegisterPage: React.FC = () => {
             <input type="text" name="username" className={RegisterPageStyle['username-input']}
                     onChange={e => setUsername(e.target.value)} />
 
+            <label htmlFor="email" className={RegisterPageStyle['email-label']}>Email:</label>
+            <input type="email" name="email" className={RegisterPageStyle['email-input']}
+                    onChange={e => setEmail(e.target.value)} />
+
             <label htmlFor="password" className={RegisterPageStyle['password-label']}>Password:</label>
-            <input type="text" name="password" className={RegisterPageStyle['password-input']}
+            <input type="password" name="password" className={RegisterPageStyle['password-input']}
                     onChange={e => setPassword(e.target.value)} />
 
-            <label htmlFor="password" className={RegisterPageStyle['password-label1']}>Confirm password:</label>
-            <input type="text" name="password" className={RegisterPageStyle['password-input1']}
+            <label htmlFor="confirm-password" className={RegisterPageStyle['password-label1']}>Confirm password:</label>
+            <input type="password" name="confirm-password" className={RegisterPageStyle['password-input1']}
                     onChange={e => setConfirmPassword(e.target.value)} />
 
             <input type="submit" value="Create Account" className={RegisterPageStyle['sign-up-btn']}

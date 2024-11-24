@@ -21,13 +21,17 @@ const AdminPage: React.FC = () => {
 
     // State to manage website statistics
     const [websiteStats, setWebsiteStats] = useState<{
-        visits: number;
+        totalVisits: number;
+        visits24h: number;
         registeredUsers: number;
         itemsForSale: number;
+        errorsLogged: number;
     }>({
-        visits: 0,
+        totalVisits: 0,
+        visits24h: 0,
         registeredUsers: 0,
         itemsForSale: 0,
+        errorsLogged: 0,
     });
 
     const [importantMsg, setImportantMsg] = useState<string | boolean>("");
@@ -86,32 +90,6 @@ const AdminPage: React.FC = () => {
         }
     };
 
-    // Reset website data
-    const resetWebsiteData = async () => {
-        if (!window.confirm("Are you sure you want to reset website data? This action cannot be undone.")) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/admin/reset`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            if (response.ok) {
-                setImportantMsg("Website data reset successfully");
-                setTimeout(() => setImportantMsg(false), 2000);
-                fetchWebsiteStats(); // Refresh stats after reset
-            } else {
-                const errorMsg = await response.text();
-                setError(`Failed to reset data: ${errorMsg}`);
-            }
-        } catch (error) {
-            console.error("Error resetting data:", error);
-            setError("Failed to reset website data");
-        }
-    };
-
     // Component initialization
     useEffect(() => {
         if (headerRef.current) {
@@ -138,11 +116,15 @@ const AdminPage: React.FC = () => {
 
                 <h1 className={AdminPageStyles["page-title"]}>Admin Dashboard</h1>
 
-                {/* Website Statistics */}
-                <div className={AdminPageStyles["stats-container"]}>
+                {/* Left-Side Statistics */}
+                <div className={AdminPageStyles["stats-column"]}>
                     <div className={AdminPageStyles["stat"]}>
-                        <label>Website Visits:</label>
-                        <div className={AdminPageStyles["stat-value"]}>{websiteStats.visits}</div>
+                        <label>Total Visits:</label>
+                        <div className={AdminPageStyles["stat-value"]}>{websiteStats.totalVisits}</div>
+                    </div>
+                    <div className={AdminPageStyles["stat"]}>
+                        <label>Visits (Last 24h):</label>
+                        <div className={AdminPageStyles["stat-value"]}>{websiteStats.visits24h}</div>
                     </div>
                     <div className={AdminPageStyles["stat"]}>
                         <label>Registered Users:</label>
@@ -152,13 +134,14 @@ const AdminPage: React.FC = () => {
                         <label>Items for Sale:</label>
                         <div className={AdminPageStyles["stat-value"]}>{websiteStats.itemsForSale}</div>
                     </div>
+                    <div className={AdminPageStyles["stat"]}>
+                        <label>Errors Logged:</label>
+                        <div className={AdminPageStyles["stat-value"]}>{websiteStats.errorsLogged}</div>
+                    </div>
                 </div>
 
                 {/* Admin Actions */}
                 <div className={AdminPageStyles["actions-container"]}>
-                    <button onClick={resetWebsiteData} className={AdminPageStyles["action-button"]}>
-                        Reset Website Data
-                    </button>
                     <button onClick={handleLogOutClick} className={AdminPageStyles["action-button"]}>
                         Log Out
                     </button>

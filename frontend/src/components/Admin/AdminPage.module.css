@@ -1,13 +1,14 @@
 .main-container {
     width: 100%;
     height: 100%;
-    top: 0;
-    left: 0;
+    position: relative;
+    display: flex;
+    flex-direction: row;
 }
 
 .page-title {
     position: absolute;
-    top: 18%;
+    top: 6%;
     left: 50%;
     transform: translate(-50%, 0);
     font-size: 2.5em;
@@ -16,26 +17,22 @@
     text-align: center;
 }
 
-.stats-container {
-    width: 70%;
-    height: 40%;
-    top: 35%;
-    left: 0%;
-    position: absolute;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    align-items: center;
-    justify-content: center;
+.stats-column {
+    width: 25%; /* Reduced width */
+    height: auto; /* Adjust height to fit content */
+    padding: 15px; /* Reduced padding */
     background-color: var(--white);
-    padding: 20px;
     border-radius: 20px;
     box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Reduced gap between stats */
+    margin-top: 7%; /* Adds spacing from top */
 }
 
 .stat {
     background-color: var(--titanium);
-    padding: 15px;
+    padding: 10px; /* Reduced padding */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -44,43 +41,36 @@
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.stat:hover {
-    cursor: default;
-    background-color: #e0e0e0;
-}
-
 .stat label {
-    font-size: 1.5em;
+    font-size: 1.2em; /* Reduced font size */
     font-weight: 700;
     color: var(--blue);
-    margin-bottom: 10px;
+    margin-bottom: 8px; /* Reduced margin */
 }
 
 .stat-value {
-    font-size: 2em;
+    font-size: 1.5em; /* Reduced font size */
     font-weight: 800;
     color: var(--green);
 }
 
 .actions-container {
-    width: 50%;
-    height: 10%;
-    top: 70%;
-    left: 10%;
     position: absolute;
+    top: 9%; /* Align at the top */
+    right: 5%; /* Position in the top-right corner */
     display: flex;
-    justify-content: space-around;
     align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
 
 .action-button {
-    width: 40%;
-    height: 100%;
+    width: auto; /* Auto width to fit content */
+    height: 50px;
     background-color: var(--titanium);
     border-radius: var(--br-xl);
     border: none;
-    outline: none;
-    font-size: 1.5em;
+    font-size: 1.2em; /* Reduced font size */
     font-weight: 700;
     text-align: center;
     color: var(--black);
@@ -88,6 +78,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    padding: 0 15px; /* Add padding for better spacing */
     transition: all 0.3s ease-in-out;
 }
 
@@ -103,9 +94,9 @@
 
 .important-message {
     position: absolute;
-    top: 80%;
+    bottom: 10%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, 0);
     background-color: rgba(0, 255, 0, 0.1);
     color: green;
     border: 2px solid green;
@@ -119,9 +110,9 @@
 
 .error {
     position: absolute;
-    top: 85%;
+    bottom: 5%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, 0);
     background-color: rgba(255, 0, 0, 0.1);
     color: red;
     border: 2px solid red;

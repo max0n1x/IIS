@@ -288,6 +288,9 @@ const UserPage: React.FC = () => {
             if (!result) {
                 startTransition(() => { navigate('/login'); });
                 return;
+            } else if (result === "admin") {
+                startTransition(() => { navigate('/admin'); });
+                return;
             }
             
             if (loggedIn.current) {

@@ -19,7 +19,6 @@ const AdminPage: React.FC = () => {
     const loggedIn = useRef<HTMLAnchorElement>(null);
     const navigate = useNavigate();
 
-    // State to manage website statistics
     const [websiteStats, setWebsiteStats] = useState<{
         visits: number;
         registeredUsers: number;
@@ -33,7 +32,6 @@ const AdminPage: React.FC = () => {
     const [importantMsg, setImportantMsg] = useState<string | boolean>("");
     const [error, setError] = useState<string>("");
 
-    // Logout functionality
     const handleLogOutClick = async () => {
         const cookies = document.cookie.split(';');
         const userId = cookies.find(cookie => cookie.includes('user_id'))?.split('=')[1];
@@ -66,17 +64,22 @@ const AdminPage: React.FC = () => {
         }
     };
 
-    // Fetch website statistics
     const fetchWebsiteStats = async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/admin/stats`, {
-                method: 'GET',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
             });
 
             if (response.ok) {
                 const data = await response.json();
-                setWebsiteStats(data);
+                setWebsiteStats(
+                    {
+                        visits: data.visitors,
+                        registeredUsers: data.users,
+                        itemsForSale: data.items,
+                    }
+                );
             } else {
                 throw new Error('Failed to fetch stats');
             }
@@ -86,43 +89,21 @@ const AdminPage: React.FC = () => {
         }
     };
 
-    // Reset website data
-    const resetWebsiteData = async () => {
-        if (!window.confirm("Are you sure you want to reset website data? This action cannot be undone.")) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/admin/reset`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            if (response.ok) {
-                setImportantMsg("Website data reset successfully");
-                setTimeout(() => setImportantMsg(false), 2000);
-                fetchWebsiteStats(); // Refresh stats after reset
-            } else {
-                const errorMsg = await response.text();
-                setError(`Failed to reset data: ${errorMsg}`);
-            }
-        } catch (error) {
-            console.error("Error resetting data:", error);
-            setError("Failed to reset website data");
-        }
-    };
-
-    // Component initialization
     useEffect(() => {
         if (headerRef.current) {
             fixElementHeight(headerRef.current);
         }
 
         checkLogin(loggedIn, logInRef).then((result) => {
+            
             if (!result) {
                 startTransition(() => { navigate('/login'); });
                 return;
+            } else  if (result !== "admin") {
+                setImportantMsg("You are not authorized to access this page");
+                navigate('/');
             }
+
             loggedIn.current!.style.display = "none";
         });
 
@@ -131,14 +112,12 @@ const AdminPage: React.FC = () => {
 
     return (
         <div>
-            {/* Header Component */}
             <Header headerRef={headerRef} logInRef={logInRef} loggedIn={loggedIn} />
 
             <div className={AdminPageStyles["main-container"]}>
 
                 <h1 className={AdminPageStyles["page-title"]}>Admin Dashboard</h1>
 
-                {/* Website Statistics */}
                 <div className={AdminPageStyles["stats-container"]}>
                     <div className={AdminPageStyles["stat"]}>
                         <label>Website Visits:</label>
@@ -154,17 +133,12 @@ const AdminPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Admin Actions */}
                 <div className={AdminPageStyles["actions-container"]}>
-                    <button onClick={resetWebsiteData} className={AdminPageStyles["action-button"]}>
-                        Reset Website Data
-                    </button>
                     <button onClick={handleLogOutClick} className={AdminPageStyles["action-button"]}>
                         Log Out
                     </button>
                 </div>
 
-                {/* Messages */}
                 {importantMsg && <div className={AdminPageStyles["important-message"]}>{importantMsg}</div>}
                 {error && <div id="error" className={AdminPageStyles["error"]}>{error}</div>}
             </div>

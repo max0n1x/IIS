@@ -515,7 +515,7 @@ const ChatsPage: React.FC = () => {
                     }
 
                     if (messageSocket.current) messageSocket.current.close();
-                    
+
                 }
 
             } else if (data.type === 'chats') {
@@ -574,6 +574,8 @@ const ChatsPage: React.FC = () => {
             await checkLogin(loggedIn, logInRef).then((result) => {
                 if (!result) {
                     startTransition(() => navigate('/login'));
+                } else if (result !== "admin") {
+                    startTransition(() => navigate('/'));
                 }
             });
         };

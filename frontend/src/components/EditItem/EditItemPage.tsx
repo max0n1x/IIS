@@ -289,6 +289,8 @@ const EditItemPage: React.FC = () => {
             await checkLogin(loggedIn, logInRef).then((result) => {
                 if (!result) {
                     navigate('/login');
+                } else if (result === "admin") {
+                    navigate('/');
                 }
             });
         };

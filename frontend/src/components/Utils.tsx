@@ -63,7 +63,11 @@ export const ifUserLoggedIn = async () => {
 
             if (response.ok) {
                 const userData = await response.json();
-                return userData.username;
+                if (userData.role === 'admin') {
+                    return 'admin';
+                } else if (userData.username) {
+                    return userData.username;
+                }
             } else {
                 return null;
             }
@@ -78,7 +82,7 @@ export const ifUserLoggedIn = async () => {
 export const checkLogin = async (
     loggedInElement: MutableRefObject<HTMLAnchorElement | null>,
     logInElement: MutableRefObject<HTMLAnchorElement | null>
-): Promise<boolean> => {
+): Promise<boolean | string> => {
 
     if (!loggedInElement.current && !logInElement.current) {
         console.warn("Logged-in or login elements are not defined.");
@@ -104,13 +108,17 @@ export const checkLogin = async (
             document.cookie = 'unauthorized=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
 
             // Hide the login element when logged in
+            if (username === 'admin') {
+                return 'admin';
+            }
+            
             return true;
         } else {
             // Show the login element if not logged in
             logInElement.current.style.display = 'flex';
             fixElementWidth(logInElement.current);
-            
-            if (!document.cookie.includes('unauthorized=true') && !document.cookie.includes('user_id')) {
+
+            if (!document.cookie.includes('unauthorized') && !document.cookie.includes('user_id')) {
                 // Inform the server about unauthorized access
                 const response = await fetch(`${API_BASE_URL}/user/unauthorized`, {
                     method: 'POST',
@@ -121,7 +129,7 @@ export const checkLogin = async (
                     console.error('Unauthorized access log failed:', response.status, response.statusText);
                 } else {
                     console.info('Unauthorized access successfully logged.');
-                    document.cookie = 'unauthorized=true; path=/, SameSite=None; Secure';
+                    document.cookie = 'unauthorized=true; path=/; SameSite=lax;';
                 }
 
                 return false;

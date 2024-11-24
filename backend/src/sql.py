@@ -40,16 +40,25 @@ class Database:
             cursor = self.conn.cursor()
 
             cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                            id INT PRIMARY KEY AUTO_INCREMENT,
+                            id INT PRIMARY KEY,
                             username VARCHAR(255) UNIQUE NOT NULL,
                             password_hash TEXT NOT NULL,
                             name TEXT,
                             surname TEXT,
-                            email TEXT,
+                            email TEXT UNIQUE NOT NULL,
                             phone TEXT,
                             address TEXT,
-                            date_of_birth TEXT);
+                            date_of_birth TEXT,
+                            role VARCHAR(255) DEFAULT 'user');
             ''')
+
+            cursor.execute('''INSERT INTO users (username, password_hash, role)
+                            VALUES (%s, %s, %s)
+                            ON DUPLICATE KEY UPDATE 
+                                username = VALUES(username), 
+                                password_hash = VALUES(password_hash), 
+                                role = VALUES(role);
+                        ''', ('admin', Hasher().hash_password('admin'), 'admin'))
 
             cursor.execute('''CREATE TABLE IF NOT EXISTS items (
                             id INT PRIMARY KEY AUTO_INCREMENT,
@@ -97,7 +106,22 @@ class Database:
             ''')
 
             cursor.execute('''CREATE TABLE IF NOT EXISTS unauthorized_users (
-                            id INT PRIMARY KEY AUTO_INCREMENT);
+                            id INT PRIMARY KEY AUTO_INCREMENT,
+                            time TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+            ''')
+
+            cursor.execute('''CREATE TABLE IF NOT EXISTS errors (
+                            id INT PRIMARY KEY AUTO_INCREMENT,
+                            time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            message TEXT);
+            ''')
+
+            cursor.execute('''CREATE TABLE IF NOT EXISTS reports (
+                            id INT PRIMARY KEY AUTO_INCREMENT,
+                            time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            message TEXT,
+                            item_id INT NOT NULL,
+                            FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE);
             ''')
 
             self.conn.commit()
@@ -105,6 +129,42 @@ class Database:
         except Error as e:
             print(e)
             exit(1)
+
+    def log_error(self, message: str) -> None:
+        """ log an error message """
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('INSERT INTO errors (message) VALUES (%s)', (message,))
+
+            self.conn.commit()
+
+        except Error as e:
+
+            print(e)
+
+    def check_admin(self, user_id : int, vKey : str) -> bool:
+        """ check if admin exists """
+        if not self.check_validation_key(user_id, vKey):
+            self.log_error('Unauthorized')
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        try:
+                
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT role FROM users WHERE id = %s', (user_id,))
+
+            row = cursor.fetchone()
+
+            return True if row[0] == 'admin' else False
+        
+        except Error as e:
+                    
+            print(e)
+            self.log_error('Cannot check admin')
+            return False
 
     def insert_validation_key(self, user_id: int, vKey: str) -> bool:
         """ insert a new validation key """
@@ -123,6 +183,7 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot insert validation key')
             return False
         
     def check_validation_key(self, user_id: int, vKey: str) -> bool:
@@ -140,6 +201,7 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot check validation key')
             return False
         
     def logout_user(self, user_id: int, vKey: str) -> bool:
@@ -157,6 +219,7 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot logout user')
             return False
 
         
@@ -175,12 +238,14 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot get user id by validation key')
             return -1
 
     def insert_item(self, **item) -> bool:
         """ insert a new item into the items table """
 
         if not self.check_validation_key(item['author_id'], item['vKey']):
+            self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
         
         try:
@@ -199,6 +264,7 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot insert item')
             return False
 
     def get_items(self, category_id: str) -> list:
@@ -217,6 +283,7 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot get items')
             return []
 
     def get_item(self, item_id: int) -> dict:
@@ -235,15 +302,18 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot get item')
             return {}
 
     def delete_item(self, item_id: int, author_id : int, vKey : str) -> bool:
         """ delete a single item from the items table """
 
         if not self.check_validation_key(author_id, vKey):
+            self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
         
         if not self.get_item(item_id):
+            self.log_error('Item not found')
             raise HTTPException(status_code=404, detail='Item not found')
 
         try:
@@ -254,6 +324,7 @@ class Database:
             row = cursor.fetchone()
 
             if row[0] != author_id:
+                self.log_error('Unauthorized')
                 return False
 
             cursor.execute('DELETE FROM items WHERE id = %s', (item_id,))
@@ -275,15 +346,18 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot delete item')
             return False
 
     def update_item(self, **item) -> bool:
         """ update a single item from the items table """
 
         if not self.check_validation_key(item['author_id'], item['vKey']):
+            self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
         
         if not self.get_item(item['item_id']):
+            self.log_error('Item not found')
             raise HTTPException(status_code=404, detail='Item not found')
         
         try:
@@ -294,6 +368,7 @@ class Database:
             row = cursor.fetchone()
 
             if row[0] != item['author_id']:
+                self.log_error('Unauthorized')
                 return False
 
             cursor.execute('''
@@ -309,6 +384,7 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot update item')
             return False
         
     def register_user(self, **user) -> int:
@@ -316,6 +392,7 @@ class Database:
         try:
 
             if not user['username'] or not user['password']:
+                self.log_error('Empty username or password')
                 return -2
 
             cursor = self.conn.cursor()
@@ -324,6 +401,7 @@ class Database:
             row = cursor.fetchone()
 
             if row:
+                self.log_error('Username already taken')
                 return -1
 
             hasher = Hasher()
@@ -339,6 +417,7 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot register user')
             return -3
         
     def login_user(self, **user) -> int:
@@ -348,16 +427,18 @@ class Database:
 
             cursor = self.conn.cursor()
 
-            cursor.execute('SELECT * FROM users WHERE username = %s', (user['username'],))
+            cursor.execute('SELECT * FROM users WHERE username = %s OR email = %s', (user['username'], user['email']))
 
             row = cursor.fetchone()
 
             if not row:
+                self.log_error('User not found')
                 return -1, ''
 
             hasher = Hasher()
 
             if not hasher.validate_password(row[2], user['password']):
+                self.log_error('Incorrect username or password')
                 return -2, ''
             
             vKey = hasher.generate_vkey()
@@ -369,12 +450,14 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot login user')
             return -3, ''
         
     def get_user_items_bd(self, user_id: int, vKey: str) -> list:
         """ get all items from the items table """
 
         if not self.check_validation_key(user_id, vKey):
+            self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
         
         try:
@@ -392,13 +475,18 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot get user items')
             return None
         
     def get_user(self, user_id : int, vKey : str) -> dict:
         """ get a single user from the users table """
 
         if not self.check_validation_key(user_id, vKey):
+            self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        if self.check_admin(user_id, vKey):
+            return {'role': 'admin'}
         
         try:
 
@@ -422,6 +510,7 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot get user')
             return {}
         
     def get_user_by_id(self, user_id: int) -> dict:
@@ -441,12 +530,14 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot get user by id')
             return {} 
         
     def update_user(self, **user) -> bool:
         """ update a single user from the users table """
 
         if not self.check_validation_key(user['user_id'], user['vKey']):
+            self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
         
         try:
@@ -463,12 +554,14 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot update user')
             return False
         
     def delete_user(self, user_id : int, vKey : str) -> bool:
         """ delete a single user from the users table """
 
         if not self.check_validation_key(user_id, vKey):
+            self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
 
         try:
@@ -496,12 +589,14 @@ class Database:
         except Error as e:
                 
             print(e)
+            self.log_error('Cannot delete user')
             return False
     
     def create_chat(self, **chat) -> int:
         """ create a new chat """
 
         if not self.check_validation_key(chat['user_from'], chat['vKey']):
+            self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
         
         try:
@@ -526,15 +621,18 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot create chat')
             return -1
         
     def get_chat(self, chat_id: int, user_id: int, vKey: str) -> dict:
         """ get a single chat """
 
         if not self.check_validation_key(user_id, vKey):
+            self.log_error('Unauthorized')
             return {}
         
         if not self.get_user(user_id, vKey):
+            self.log_error('User not found')
             return {}
         
         try:
@@ -546,9 +644,11 @@ class Database:
             row = cursor.fetchone()
 
             if not row:
+                self.log_error('Chat not found')
                 return {}
             
             if row[1] != int(user_id) and row[2] != int(user_id):
+                self.log_error('Unauthorized')
                 return {}
 
             keys = ('chat_id', 'user_from', 'user_to', 'item_id')
@@ -558,13 +658,15 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot get chat')
             return {}
         
     def get_chats(self, user_id: int, vKey: str) -> list:
         """ get all chats for a user """
 
         if not self.check_validation_key(user_id, vKey):
-            raise HTTPException(status_code=401, detail='Unauthorized')
+            self.log_error('Unauthorized')
+            return []
         
         try:
 
@@ -581,15 +683,18 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot get chats')
             return []
         
     def delete_chat(self, chat_id: int, user_id: int, vKey: str) -> bool:
         """ delete a single chat """
 
         if not self.check_validation_key(user_id, vKey):
+            self.log_error('Unauthorized')
             return False
         
         if not self.get_chat(chat_id, user_id, vKey):
+            self.log_error('Chat not found')
             return False
         
         try:
@@ -600,6 +705,7 @@ class Database:
             row = cursor.fetchone()
 
             if row[0] != int(user_id) and row[1] != int(user_id):
+                self.log_error('Unauthorized')
                 return False
 
             cursor.execute('DELETE FROM chats WHERE chat_id = %s', (chat_id,))
@@ -615,15 +721,18 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot delete chat')
             return False
         
     def create_message(self, chat_id: int, message: str, date : str, author_id: int, vKey: str) -> bool:
         """ create a new message """
 
         if not self.check_validation_key(author_id, vKey):
+            self.log_error('Unauthorized')
             return False
         
         if not self.get_chat(chat_id, author_id, vKey):
+            self.log_error('Chat not found')
             return False
         
         try:
@@ -640,6 +749,7 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot create message')
             return False
     
     def get_messages(self, chat_id: int, user_id: int, vKey: str) -> list:
@@ -660,12 +770,14 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot get messages')
             return []
         
     def delete_message(self, message_id: int, user_id: int, vKey: str) -> bool:
         """ delete a single message """
         
         if not self.check_validation_key(user_id, vKey):
+            self.log_error('Unauthorized')
             return False
         
         try:
@@ -676,9 +788,11 @@ class Database:
             row = cursor.fetchone()
 
             if not row:
+                self.log_error('Message not found')
                 return False
 
             if row[0] != int(user_id):
+                self.log_error('Unauthorized')
                 return False
 
             cursor.execute('DELETE FROM messages WHERE message_id = %s', (message_id,))
@@ -690,16 +804,18 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot delete message')
             return False
         
     def update_message(self, message_id : int, message : str, author_id : int, vKey : str) -> bool:
         """ update a single message """
         
         if not self.check_validation_key(author_id, vKey):
-            print(author_id, vKey)
+            self.log_error('Unauthorized')
             return False
         
         if not message:
+            self.log_error('Empty message')
             return False
         
         try:
@@ -711,9 +827,11 @@ class Database:
             row = cursor.fetchone()
 
             if not row:
+                self.log_error('Message not found')
                 return False
 
             if row[0] != int(author_id):
+                self.log_error('Unauthorized')
                 return False
         
             cursor.execute('''UPDATE messages SET message = %s WHERE message_id = %s''', (message, message_id))
@@ -725,6 +843,7 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot update message')
             return False
 
     def unauthorized_user(self) -> int:
@@ -733,7 +852,7 @@ class Database:
 
             cursor = self.conn.cursor()
 
-            cursor.execute('''INSERT INTO unauthorized_users (id) VALUES (NULL)''')
+            cursor.execute('''INSERT INTO unauthorized_users (id, time) VALUES (NULL, CURRENT_TIMESTAMP)''')
 
             self.conn.commit()
 
@@ -742,7 +861,43 @@ class Database:
         except Error as e:
 
             print(e)
+            self.log_error('Cannot add unauthorized user')
             return -1
+        
+    def get_stats(self) -> dict:
+        """ fetch statistics """
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT COUNT(*) FROM users')
+            users = cursor.fetchone()[0]
+
+            cursor.execute('SELECT COUNT(*) FROM items')
+            items = cursor.fetchone()[0]
+
+            cursor.execute('SELECT COUNT(*) FROM unauthorized_users')
+            visitors = cursor.fetchone()[0]
+
+            cursor.execute('SELECT COUNT(*) FROM unauthorized_users WHERE time > DATE_SUB(NOW(), INTERVAL 1 DAY)')
+            visitors_day = cursor.fetchone()[0]
+
+            cursor.execute('SELECT COUNT(*) FROM errors')
+            errors = cursor.fetchone()[0]
+
+            return {'users': users, 'items': items, 'visitors': visitors, 'visitors_day': visitors_day, 'errors': errors}
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot fetch stats')
+            return {}
+        
+    def report_create(self) -> bool:
+        pass
+
+    def report_resolve(self) -> bool:
+        pass
 
     def __del__(self) -> None:
         """ close the database connection """

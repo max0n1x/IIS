@@ -16,7 +16,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.models import *
 from src.sockets import SocketsManager
 from src.imgur import ImageUploader
-from datetime import datetime, timedelta, timezone
 import logging
 
 app = FastAPI()
@@ -233,6 +232,13 @@ async def update_item(item: ItemUpdate) -> bool:
         return True
     else:
         raise HTTPException(status_code=500, detail='Server error')
+    
+@app.post('/api/v1.0/admin/stats')
+async def get_stats() -> dict:
+    if db.get_stats():
+        return db.get_stats()
+    
+    raise HTTPException(status_code=500, detail='Server error')
 
 
 def run():

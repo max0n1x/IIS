@@ -64,9 +64,11 @@ export const ifUserLoggedIn = async () => {
             if (response.ok) {
                 const userData = await response.json();
                 if (userData.role === 'admin') {
-                    return 'admin';
+                    return { username: userData.username, role: 'admin' };
+                } else if (userData.role === 'moderator') {
+                    return { username: userData.username, role: 'moderator' };
                 } else if (userData.username) {
-                    return userData.username;
+                    return { username: userData.username, role: 'user' };
                 }
             } else {
                 return null;
@@ -90,26 +92,30 @@ export const checkLogin = async (
     }
 
     try {
-        const username = await ifUserLoggedIn();
+        const data = await ifUserLoggedIn();
 
         if (!loggedInElement.current || !logInElement.current) {
             console.warn("Logged-in or login elements are not defined.");
             return false;
         }
 
-        if (username) {
+        if (data) {
             // Show the logged-in UI with the username
             loggedInElement.current.style.display = 'flex';
             loggedInElement.current.children[0].textContent =
-                username.length > 6 ? `Logged in as ${username.slice(0, 6)}...` : `Logged in as ${username}`;
+                data.username.length > 6 ? `Logged in as ${data.username.slice(0, 6)}...` : `Logged in as ${data.username}`;
             fixElementWidth(loggedInElement.current);
 
             // Remove the unauthorized cookie if present
             document.cookie = 'unauthorized=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
 
             // Hide the login element when logged in
-            if (username === 'admin') {
+            if (data.role === 'admin') {
                 return 'admin';
+            }
+
+            if (data.role === 'moderator') {
+                return 'moderator';
             }
             
             return true;

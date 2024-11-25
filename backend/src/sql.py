@@ -735,9 +735,6 @@ class Database:
             self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
         
-        if self.check_admin(user_id, vKey):
-            return {'role': 'admin'}
-        
         try:
 
             cursor = self.conn.cursor()
@@ -1195,7 +1192,7 @@ class Database:
 
     def get_reports(self, user_id: int, vKey: str) -> list:
         """ get all reports """
-        if not self.check_admin(user_id, vKey):
+        if not self.check_admin(user_id, vKey) and not self.check_moderator(user_id, vKey):
             self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
         
@@ -1219,7 +1216,7 @@ class Database:
         
     def report_resolve(self, report_id: int, user_id: int, vKey: str, action: str, ban_duration: int) -> bool:
         """ resolve a single report """
-        if not self.check_admin(user_id, vKey):
+        if not self.check_admin(user_id, vKey) and not self.check_moderator(user_id, vKey):
             self.log_error('Unauthorized')
             return False
         
@@ -1250,6 +1247,21 @@ class Database:
         
             if action == 'ban':
                 cursor.execute('UPDATE users SET status = \'banned\', ban_duration = %s, banned_at = NOW() WHERE id = (SELECT author_id FROM items WHERE id = %s)', (ban_duration, row[0]))
+                self.conn.commit()
+
+                cursor.execute('DELETE FROM items WHERE id = %s', (row[0],))
+                self.conn.commit()
+                
+                cursor.execute('SELECT chat_id FROM chats WHERE item_id = %s', (row[0],))
+
+                rows = cursor.fetchall()
+
+                for row in rows:
+                    cursor.execute('DELETE FROM messages WHERE chat_id = %s', (row[0],))
+                    self.conn.commit()
+
+                cursor.execute('DELETE FROM chats WHERE item_id = %s', (row[0],))
+
                 self.conn.commit()
 
             cursor.execute('DELETE FROM reports WHERE id = %s', (report_id,))
@@ -1399,6 +1411,60 @@ class Database:
 
             print(e)
             self.log_error('Cannot demote user')
+            return False
+        
+    def item_action(self, item_id: int, user_id: int, vKey: str, action: str) -> bool:
+        
+        if not self.check_admin(user_id, vKey) or not self.check_moderator(user_id, vKey):
+            self.log_error('Unauthorized')
+            return False
+        
+        try:
+                
+            cursor = self.conn.cursor()
+
+            if action == 'delete':
+                cursor.execute('DELETE FROM items WHERE id = %s', (item_id,))
+                self.conn.commit()
+
+                cursor.execute('SELECT chat_id FROM chats WHERE item_id = %s', (item_id,))
+                rows = cursor.fetchall()
+
+                for row in rows:
+                    cursor.execute('DELETE FROM messages WHERE chat_id = %s', (row[0],))
+                    self.conn.commit()
+
+                cursor.execute('DELETE FROM chats WHERE item_id = %s', (item_id,))
+                self.conn.commit()
+
+                cursor.execute('DELETE FROM reports WHERE item_id = %s', (item_id,))
+                self.conn.commit()
+
+            if action == 'ban':
+                cursor.execute('UPDATE users SET status = \'banned\', ban_duration = 1, banned_at = NOW() WHERE id = (SELECT author_id FROM items WHERE id = %s)', (item_id,))
+                self.conn.commit()
+
+                cursor.execute('DELETE FROM items WHERE id = %s', (item_id,))
+                self.conn.commit()
+
+                cursor.execute('SELECT chat_id FROM chats WHERE item_id = %s', (item_id,))
+
+                rows = cursor.fetchall()
+
+                for row in rows:
+                    cursor.execute('DELETE FROM messages WHERE chat_id = %s', (row[0],))
+                    self.conn.commit()
+
+                cursor.execute('DELETE FROM chats WHERE item_id = %s', (item_id,))
+
+                self.conn.commit()
+    
+                return True
+        
+        except Error as e:
+                    
+            print(e)
+            self.log_error('Cannot perform action')
             return False
 
     def __del__(self) -> None:

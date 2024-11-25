@@ -130,4 +130,10 @@ class BanUser(BaseModel):
     vKey: str
     duration: str
 
+class ItemAction(BaseModel):
+    item_id: int
+    user_id: int
+    vKey: str
+    action : str
+
     

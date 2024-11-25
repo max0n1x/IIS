@@ -120,6 +120,7 @@ const ForgotPasswordPage: React.FC = () => {
                     className={ForgotPasswordPageStyle['email-input']}
                     value={email}
                     onChange={emailValidation}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 />
 
                 <div className={ForgotPasswordPageStyle['button-container']}>

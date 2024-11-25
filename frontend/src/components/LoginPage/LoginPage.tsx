@@ -172,7 +172,7 @@ const LoginPage: React.FC = () => {
             <input type="password" name="password" 
                     className={LoginPageStyle['password-input']} 
                     id="password" onInput={handleInput}
-                    onChange={e => setPassword(e.target.value)} />
+                    onChange={e => setPassword(e.target.value)} onKeyDown={(e) => {if (e.key === 'Enter') login();}} />
 
             {/* Login button to initiate the login process */}
             <input type="button" value="Log In" id="log-in-btn" 

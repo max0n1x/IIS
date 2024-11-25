@@ -35,6 +35,8 @@ const ItemPage: React.FC = () => {
     const [userLoggedIn, setUserLoggedIn] = useState(false);
     const [isReport, setIsReport] = useState(false);
     const [banDuration, setBanDuration] = useState<string | null>(null);
+    const [isModerator, setIsModerator] = useState(false);
+    const [yours, setYours] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -111,7 +113,51 @@ const ItemPage: React.FC = () => {
     };
 
     const handleAction = async () => {
-        // 
+            
+        if (!ReportResolve) {
+            alert("Please select an action.");
+            return;
+        }
+
+        const cookies = document.cookie.split(';');
+
+        if (!cookies) {
+            return;
+        }
+
+        const user_id = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if (!user_id || !vKey) {
+            return;
+        }
+
+        const data = {
+            item_id: item_id,
+            action: ReportResolve,
+            user_id: user_id.split('=')[1],
+            vKey: vKey.split('=')[1]
+        };
+
+        try {
+            const response = await fetch(API_BASE_URL + "/item/action", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert("Action taken successfully.");
+                navigate('/admin');
+            } else {
+                alert("An error occurred while taking the action.");
+            }
+        } catch (err) {
+            alert("An error occurred. Please try again.");
+        }
+
     };
 
     const handleResolve = async () => {
@@ -235,6 +281,16 @@ const ItemPage: React.FC = () => {
             setItemPrice(item.price);
             setItemImage(item.image_path);
             setItemSeller(item.author_id);
+
+            const cookies = document.cookie.split(';');
+
+            const user_id = cookies.find(cookie => cookie.includes('user_id'));
+
+            if (user_id && Number(user_id.split('=')[1]) === item.author_id) {
+                navigate("/user/edit-item?item_id=" + item_id);
+                setYours(true);
+            }
+
         });
 
         const loggedInCheck = async () => {
@@ -243,9 +299,12 @@ const ItemPage: React.FC = () => {
                     setUserLoggedIn(true);
                 } else if (result === 'admin') {
                     setAdminLoggedIn(true);
+                } else if (result === 'moderator') {
+                    setIsModerator(true);
                 } else {
                     setUserLoggedIn(false);
                     setAdminLoggedIn(false);
+                    setIsModerator(false);
                 }
             }
         );}
@@ -333,11 +392,13 @@ const ItemPage: React.FC = () => {
                     </div>
                 </div>
 
+                {!yours && (
                 <input type="submit" className={ItemPageStyle["contact-seller-button"]} ref={contactRef}
                     onClick={CreateChat} value="Contact seller" />
+                )}
 
 
-                {userLoggedIn && (
+                {userLoggedIn && !isReport && !yours && (
                     <div className={ItemPageStyle["report-section"]}>
                         <label htmlFor="report-reason" className={ItemPageStyle["report-label"]}>Report this item:</label>
                         <select
@@ -358,7 +419,7 @@ const ItemPage: React.FC = () => {
                     </div>
                 )}
 
-                {adminLoggedIn && isReport && (
+                {(adminLoggedIn || isModerator) && isReport && !yours && (
                     <div className={ItemPageStyle["report-section"]}>
 
                         <div className={ItemPageStyle["report-reason"]}>Reason: {ReportReason}</div>
@@ -383,7 +444,7 @@ const ItemPage: React.FC = () => {
                     </div>
                 )}
 
-                {adminLoggedIn && !isReport && (
+                {((adminLoggedIn && !isReport) || (isModerator && !isReport)) && !yours && (
                     <div className={ItemPageStyle["report-section"]}>
                         
                         <select

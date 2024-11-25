@@ -1,0 +1,125 @@
+.main-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    top : 20%;
+}
+
+.page-title {
+    position: absolute;
+    top: 9vh;
+    left: 50vw;
+    transform: translate(-50%, 0);
+    font-size: 2.5em;
+    font-weight: 800;
+    color: var(--black);
+    text-align: center;
+}
+
+.important-message {
+    position: absolute;
+    bottom: 10%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    background-color: rgba(0, 255, 0, 0.1);
+    color: green;
+    border: 2px solid green;
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-size: 1.5em;
+    text-align: center;
+    opacity: 0.8;
+    box-shadow: 0px 4px 8px rgba(0, 128, 0, 0.2);
+}
+
+.error {
+    position: absolute;
+    top: 7vh;
+    left: 50%;
+    transform: translate(-50%, 0);
+    background-color: rgba(255, 0, 0, 0.1);
+    color: red;
+    border: 2px solid red;
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-size: 1.5em;
+    text-align: center;
+    opacity: 0.8;
+    box-shadow: 0px 4px 8px rgba(255, 0, 0, 0.2);
+}
+
+.reports-column {
+    width: 70%;
+    height: 70vh;
+    padding: 30px;
+    left: 0;
+    background-color: var(--white);
+    border-radius: 20px;
+    box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 10%;
+    margin-left: 5%;
+    display: flex;
+    flex-direction: column;
+    align-self: center;
+    justify-self: center;
+    gap: 15px;
+    overflow-y: scroll;
+    overflow: hidden; 
+}
+
+.reports-column
+{
+    overflow: auto;
+    scrollbar-width: none; 
+    -ms-overflow-style: none; 
+}
+  
+.reports-column::-webkit-scrollbar {
+    display: none;
+}
+  
+.reports-title {
+    font-size: 2em;
+    font-weight: 800;
+    color: var(--black);
+    text-align: center;
+    border: 2px solid var(--black);
+    position: sticky;
+    top: 0;
+    background-color: var(--white);
+    z-index: 1;
+    padding: 10px 0;
+    width: 100%;
+    height: 10%;
+    margin: 0;
+}
+
+.report {
+    background-color: var(--titanium);
+    padding: 10px; /* Reduced padding */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--br-xl);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.report:hover {
+    cursor: pointer;
+    background-color: #bfbfbf;
+}
+
+.report label {
+    font-size: 1.2em; /* Reduced font size */
+    font-weight: 700;
+    color: var(--blue);
+    margin-bottom: 8px; /* Reduced margin */
+}
+
+.report-value {
+    font-size: 1.5em; /* Reduced font size */
+    font-weight: 800;
+    color: var(--green);
+}

@@ -122,6 +122,7 @@ const VerifyPage: React.FC = () => {
                     className={VerifyPageStyle['code-input']}
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
                 />
 
                 <div className={VerifyPageStyle['button-container']}>

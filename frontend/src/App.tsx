@@ -25,6 +25,7 @@ import ForgotPasswordPage from './components/ForgotPassword/ForgotPasswordPage';
 import ChangePasswordPage from './components/ChangePassword/ChangePasswordPage';
 import AdminPage from './components/Admin/AdminPage';
 import ResetPasswordPage from './components/ResetPassword/ResetPasswordPage';
+import ModeratorPage from './components/Moderator/ModeratorPage';
 import Page404 from './components/ErrorPages/Page404';
 import './components/GlobalStyles.css';
 import './App.css';
@@ -57,6 +58,7 @@ const App = () => {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/moderator" element={<ModeratorPage />} />
         <Route path="*" element={<Page404 />} />
       </Routes>
     </BrowserRouter>

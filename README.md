@@ -6,18 +6,8 @@ Garage sale web application.
 
 ### Docker
 
-#### Backen
-
 ```bash
-cd backend
-docker build --pull --rm -f "Dockerfile" -t backend:latest .
-```
-
-#### Frontend
-
-```bash
-cd fronten
-docker build --pull --rm -f "Dockerfile" -t frontend:latest .
+docker compose -f docker-compose.yml build
 ```
 
 #
@@ -44,18 +34,9 @@ npm install
 
 ### Docker
 
-#### Backend
-
 ```bash
-docker run --rm -d -p 8080:8080/tcp backend:latest
+docker compose -f docker-compose.yml up -d
 ```
-
-#### Frontend
-
-```bash
-docker run --rm -d -p 3000:3000/tcp frontend:latest
-```
-#
 
 ### Manual run
 
@@ -85,7 +66,7 @@ http://localhost:3000 # frontend
 
 or 
 
-http://localhost:8080 # backend
+http://localhost:8080/api/v1.0 # backend
 ```
 
 ## Frontend debugging

@@ -7,7 +7,7 @@
  * @author Maksym Podhornyi - xpodho08
  */
 
-import React, { useEffect, useRef, useState, startTransition, useCallback } from "react";
+import React, { useEffect, useRef, useState, startTransition, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { fixElementHeight, checkLogin, Header, API_BASE_URL } from "../Utils";
 import AdminPageStyles from "./AdminPage.module.css"; // Admin-specific styles
@@ -375,13 +375,21 @@ const AdminPage: React.FC = () => {
         });
 
     }
+
+    const banTimeLocal = useMemo(() => {
+        return (time : string) => {
+            const date = new Date(time);
+            return date.toLocaleString('en-GB', { timeZone: 'Europe/Prague' });
+        }
+    }, []);
     
     const generateUser = (email : string, status : string, id : number, username : string, role : string, ban_duration : number, ban_time : string) => {
         return (
             <div key={id} className={AdminPageStyles["action"]}>
                 <label>{username} (email: {email}):</label>
                 <div className={AdminPageStyles["action-value"]}>Status: {status}</div>
-                {status === 'banned' && <div className={AdminPageStyles["action-value"]}>Banned at: {ban_time}</div>}
+                {status === 'banned' && <div className={AdminPageStyles["action-value"]}>Banned at: {banTimeLocal(ban_time)}</div>}
+                {status === 'banned' && <div className={AdminPageStyles["action-value"]}>Ban duration: {ban_duration} hours</div>}
                 <div className={AdminPageStyles["action-value"]}>Role: {role}</div>
                 <div className={AdminPageStyles["btns-container"]}>
                     <div className={AdminPageStyles["action-btn"]} data-user-id={id} onClick={changeUserEmail}></div>
@@ -655,15 +663,6 @@ const AdminPage: React.FC = () => {
 
                 <div className={AdminPageStyles["actions-column"]}>
                     <h2 className={AdminPageStyles["actions-title"]}>Users</h2>
-                    <div className={AdminPageStyles["action"]}>
-                        <label>User 1:</label>
-                        <div className={AdminPageStyles["action-value"]}>Status: Active</div>
-                        <div className={AdminPageStyles["btns-container"]}>
-                            <div className={AdminPageStyles["action-btn"]}></div>
-                            <div className={AdminPageStyles["action-btn"]}></div>
-                            <div className={AdminPageStyles["action-btn"]}></div>
-                        </div>
-                    </div>
                     {users?.map((user) => generateUser(user.email, user.status, user.id, user.username, user.role, user.ban_duration, user.banned_at))}
                 </div>
 

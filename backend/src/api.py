@@ -345,6 +345,12 @@ async def update_item(item: ItemUpdate) -> bool:
     else:
         raise HTTPException(status_code=500, detail='Server error')
     
+@app.post('/api/v1.0/item/action')
+async def item_action(item: ItemAction) -> bool:
+    if db.item_action(**item.dict()):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
+    
 @app.post('/api/v1.0/admin/stats')
 async def get_stats(user : CookieUser) -> dict:
     if db.get_stats(user.user_id, user.vKey):

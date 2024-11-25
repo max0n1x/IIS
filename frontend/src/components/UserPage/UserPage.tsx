@@ -30,6 +30,8 @@ const UserPage: React.FC = () => {
 
     const [importantMsg, setImportantMsg] = useState<string | boolean>("");
 
+    const [isModerator, setIsModerator] = useState(false);
+
     const[error, setError] = useState("");
 
     type Item = {
@@ -317,6 +319,9 @@ const UserPage: React.FC = () => {
             } else if (result === "admin") {
                 startTransition(() => { navigate('/admin'); });
                 return;
+            } else if (result === "moderator") {
+                setIsModerator(true);
+                return;
             }
             
             if (loggedIn.current) {
@@ -334,6 +339,12 @@ const UserPage: React.FC = () => {
                 body: JSON.stringify({user_id: user_id, vKey: vKey})
             });
             const data = await response.json();
+
+            if (!data) {
+                startTransition(() => { navigate('/login'); });
+                return;
+            }
+
             for (const item of data) {
                 if (item.name.length > 15) {
                     item.name = item.name.substring(0, 15) + "...";
@@ -466,6 +477,7 @@ const UserPage: React.FC = () => {
                 <input type="submit" value="DONE" className={UserPageStyles["submit-button"]} onClick = {handleDoneClick} />
                 <input type="submit" value="Log out" className={UserPageStyles["log-out-button"]} onClick = {handleLogOutClick} />
                 <input type="button" value="Delete account" className={UserPageStyles["delete-button"]} onClick = {handleDeleteClick} />
+                {isModerator && <Link to = "/moderator" className={UserPageStyles["moderator-button"]}>MODERATOR</Link>}
                 <Link to = "/user/add-item" className={UserPageStyles["add-item-button"]}>ADD ITEM</Link>
                 <Link to = "/user/chats" className={UserPageStyles["chat-button"]}>CHATS</Link>
 

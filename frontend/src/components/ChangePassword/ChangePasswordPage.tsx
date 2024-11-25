@@ -98,6 +98,7 @@ const ChangePasswordPage: React.FC = () => {
                     className={ChangePasswordPageStyle['email-input']}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 />
 
                 <label htmlFor="newPassword" className={ChangePasswordPageStyle['password-label']}>New Password:</label>
@@ -107,6 +108,7 @@ const ChangePasswordPage: React.FC = () => {
                     className={ChangePasswordPageStyle['password-input']}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 />
 
                 <label htmlFor="repeatPassword" className={ChangePasswordPageStyle['password-label']}>Repeat New Password:</label>
@@ -116,6 +118,7 @@ const ChangePasswordPage: React.FC = () => {
                     className={ChangePasswordPageStyle['password-input']}
                     value={repeatPassword}
                     onChange={(e) => setRepeatPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 />
 
                 <div className={ChangePasswordPageStyle['button-container']}>

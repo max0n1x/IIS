@@ -28,13 +28,13 @@ class ItemUpdate(BaseModel):
     item_id: int
     author_id: int
     vKey: str
-    name: Optional[str]
-    description: Optional[str]
-    price: Optional[float]
-    size: Optional[str]
-    conditionId: Optional[str]
-    categoryId: Optional[str]
-    image_path: Optional[str]
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    size: Optional[str] = None
+    conditionId: Optional[str] = None
+    categoryId: Optional[str] = None
+    image_path: Optional[str] = None
 
 class User(BaseModel):
     password: str

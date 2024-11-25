@@ -574,7 +574,7 @@ const ChatsPage: React.FC = () => {
             await checkLogin(loggedIn, logInRef).then((result) => {
                 if (!result) {
                     startTransition(() => navigate('/login'));
-                } else if (result !== "admin") {
+                } else if (result === "admin") {
                     startTransition(() => navigate('/'));
                 }
             });

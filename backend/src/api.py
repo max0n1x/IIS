@@ -161,6 +161,73 @@ async def reset_password(password : PasswordReset) -> bool:
         return True
     raise HTTPException(status_code=500, detail='Server error')
 
+@app.post('/api/v1.0/report/create')
+async def report_item(report : Report) -> bool:
+    """ report item """
+    if db.report_create(**report.dict()):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
+
+@app.post('/api/v1.0/report')
+async def get_report(report : GetReport) -> dict:
+    """ get report """
+    report = db.get_report(**report.dict())
+    if report:
+        return report
+    raise HTTPException(status_code=500, detail='Server error')
+
+@app.post('/api/v1.0/reports')
+async def get_reports(user : CookieUser) -> list[dict]:
+    """ get all reports """
+    reports = db.get_reports(user.user_id, user.vKey)
+    if reports:
+        return reports
+    elif reports == []:
+        return []
+    raise HTTPException(status_code=500, detail='Server error')
+
+@app.post('/api/v1.0/report/resolve')
+async def resolve_report(report : ReportResolve) -> bool:
+    """ resolve report """
+    if db.report_resolve(**report.dict()):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
+
+@app.post('/api/v1.0/user/promote')
+async def promote_user(user : PromoteUser) -> bool:
+    """ promote user """
+    if db.promote_user(user.user_id, user.vKey, user.admin_id):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
+    pass
+
+@app.post('/api/v1.0/user/demote')
+async def demote_user(user : PromoteUser) -> bool:
+    """ demote user """
+    if db.demote_user(user.user_id, user.vKey, user.admin_id):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
+
+@app.post('/api/v1.0/user/ban')
+async def ban_user(user : CookieUser) -> bool:
+    pass
+
+@app.post('/api/v1.0/user/unban')
+async def unban_user(user : CookieUser) -> bool:
+    pass
+
+@app.post('/api/v1.0/admin/change_mail')
+async def mail_edit(user : CookieUser) -> bool:
+    pass
+
+@app.post('/api/v1.0/admin/get_users')
+async def get_users(user : CookieUser) -> list[dict]:
+    users = db.get_users(user.user_id, user.vKey)
+    if users:
+        return users
+    
+    raise HTTPException(status_code=500, detail='Server error')
+
 @app.post('/api/v1.0/login')
 async def user_login(user : User, response: Response) -> dict:
     """ login a user and set cookie """
@@ -273,12 +340,11 @@ async def update_item(item: ItemUpdate) -> bool:
         raise HTTPException(status_code=500, detail='Server error')
     
 @app.post('/api/v1.0/admin/stats')
-async def get_stats() -> dict:
-    if db.get_stats():
-        return db.get_stats()
+async def get_stats(user : CookieUser) -> dict:
+    if db.get_stats(user.user_id, user.vKey):
+        return db.get_stats(user.user_id, user.vKey)
     
     raise HTTPException(status_code=500, detail='Server error')
-
 
 def run():
     uvicorn.run(app, host=ENDPOINT_HOST, port=ENDPOINT_PORT, log_level='info')

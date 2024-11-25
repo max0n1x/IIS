@@ -48,9 +48,25 @@ class Database:
                             phone TEXT,
                             address TEXT,
                             date_of_birth TEXT,
-                            role VARCHAR(255) DEFAULT 'user');
+                            role VARCHAR(255) DEFAULT 'user',
+                            status VARCHAR(255) DEFAULT 'active',
+                            banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            ban_duration INT DEFAULT -1);
             ''')
 
+            cursor.execute('''
+                            CREATE EVENT IF NOT EXISTS check_bans
+                            ON SCHEDULE EVERY 1 HOUR
+                            DO
+                            BEGIN
+                                UPDATE users
+                                SET status = 'active'
+                                WHERE status = 'banned' 
+                                AND ban_duration > 0 
+                                AND TIMESTAMPDIFF(HOUR, banned_at, NOW()) >= ban_duration;
+                            END;
+            ''')
+                           
             cursor.execute('''INSERT INTO users (username, password_hash, role)
                             VALUES (%s, %s, %s)
                             ON DUPLICATE KEY UPDATE 
@@ -118,7 +134,7 @@ class Database:
             cursor.execute('''CREATE TABLE IF NOT EXISTS reports (
                             id INT PRIMARY KEY AUTO_INCREMENT,
                             time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            message TEXT,
+                            reason TEXT NOT NULL,
                             item_id INT NOT NULL,
                             FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE);
             ''')
@@ -194,6 +210,28 @@ class Database:
                     
             print(e)
             self.log_error('Cannot check admin')
+            return False
+        
+    def check_moderator(self, user_id : int, vKey : str) -> bool:
+        """ check if moderator exists """
+        if not self.check_validation_key(user_id, vKey):
+            self.log_error('Unauthorized')
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        try:
+                
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT role FROM users WHERE id = %s', (user_id,))
+
+            row = cursor.fetchone()
+
+            return True if row[0] == 'moderator' else False
+        
+        except Error as e:
+                    
+            print(e)
+            self.log_error('Cannot check moderator')
             return False
 
     def insert_validation_key(self, user_id: int, vKey: str) -> bool:
@@ -369,6 +407,9 @@ class Database:
             self.conn.commit()
 
             cursor.execute('DELETE FROM chats WHERE item_id = %s', (item_id,))
+            self.conn.commit()
+
+            cursor.execute('DELETE FROM reports WHERE item_id = %s', (item_id,))
             self.conn.commit()
 
             return True
@@ -639,6 +680,10 @@ class Database:
             if not row:
                 self.log_error('User not found')
                 return -1, ''
+            
+            if row[10] != 'active':
+                self.log_error('User is banned')
+                raise HTTPException(status_code=403, detail='User is banned')
 
             hasher = Hasher()
 
@@ -697,7 +742,7 @@ class Database:
 
             cursor = self.conn.cursor()
 
-            cursor.execute('SELECT id, username, name, surname, email, phone, address, date_of_birth FROM users WHERE id = %s', (user_id,))
+            cursor.execute('SELECT id, username, name, surname, email, phone, address, date_of_birth, role FROM users WHERE id = %s', (user_id,))
 
             row = cursor.fetchone()
 
@@ -709,7 +754,8 @@ class Database:
                 'email': row[4],
                 'phone': row[5],
                 'address': row[6],
-                'date_of_birth': row[7]
+                'date_of_birth': row[7],
+                'role': row[8]
             } if row else {}
 
         except Error as e:
@@ -1069,8 +1115,13 @@ class Database:
             self.log_error('Cannot add unauthorized user')
             return -1
         
-    def get_stats(self) -> dict:
+    def get_stats(self, user_id: int, vKey: str) -> dict:
         """ fetch statistics """
+
+        if not self.check_admin(user_id, vKey):
+            self.log_error('Unauthorized')
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
         try:
 
             cursor = self.conn.cursor()
@@ -1100,10 +1151,207 @@ class Database:
         
     def report_create(self, **report) -> bool:
         """ create a new report """
-        pass
+        try:
 
-    def report_resolve(self) -> bool:
-        pass
+            cursor = self.conn.cursor()
+
+            cursor.execute('INSERT INTO reports (reason, item_id) VALUES (%s, %s)', (report['reason'], report['item_id']))
+
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot create report')
+            return False
+        
+    def get_report(self, report_id: int, user_id: int, vKey: str) -> dict:
+        """ get a single report """
+        if not self.check_admin(user_id, vKey):
+            self.log_error('Unauthorized')
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT * FROM reports WHERE id = %s', (report_id,))
+
+            row = cursor.fetchone()
+
+            if not row:
+                self.log_error('Report not found')
+                return {}
+
+            return {'time': row[1], 'reason': row[2]}
+
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot get report')
+            return {}
+
+    def get_reports(self, user_id: int, vKey: str) -> list:
+        """ get all reports """
+        if not self.check_admin(user_id, vKey):
+            self.log_error('Unauthorized')
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT * FROM reports')
+
+            rows = cursor.fetchall()
+
+            keys = ('id', 'time', 'reason', 'item_id')
+
+            return [{key: value for key, value in zip(keys, row)} for row in rows]
+
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot get reports')
+            return -1
+        
+    def report_resolve(self, report_id: int, user_id: int, vKey: str, action: str, ban_duration: int) -> bool:
+        """ resolve a single report """
+        if not self.check_admin(user_id, vKey):
+            self.log_error('Unauthorized')
+            return False
+        
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT item_id FROM reports WHERE id = %s', (report_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                self.log_error('Report not found')
+                return False
+
+            if action == 'delete':
+                cursor.execute('DELETE FROM items WHERE id = %s', (row[0],))
+                self.conn.commit()
+
+                cursor.execute('SELECT chat_id FROM chats WHERE item_id = %s', (row[0],))
+                rows = cursor.fetchall()
+
+                for row in rows:
+                    cursor.execute('DELETE FROM messages WHERE chat_id = %s', (row[0],))
+                    self.conn.commit()
+
+                cursor.execute('DELETE FROM chats WHERE item_id = %s', (row[0],))
+                self.conn.commit()
+        
+            if action == 'ban':
+                cursor.execute('UPDATE users SET status = \'banned\', ban_duration = %s, banned_at = NOW() WHERE id = (SELECT author_id FROM items WHERE id = %s)', (ban_duration, row[0]))
+                self.conn.commit()
+
+            cursor.execute('DELETE FROM reports WHERE id = %s', (report_id,))
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot resolve report')
+            return False
+        
+    def ban_user(self, admin_id: int, vKey: str, user_id: int, duration: int) -> bool:
+        """ ban a single user """
+        if not self.check_admin(admin_id, vKey):
+            self.log_error('Unauthorized')
+            return False
+        
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('UPDATE users SET status = \'banned\', ban_duration = %s, banned_at = NOW() WHERE id = %s', (duration, user_id))
+
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot ban user')
+            return False
+        
+    def get_users(self, user_id: int, vKey: str) -> list:
+        """ get all users """
+        if not self.check_admin(user_id, vKey):
+            self.log_error('Unauthorized')
+            raise HTTPException(status_code=401, detail='Unauthorized')
+        
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('SELECT id, username, email, role, status FROM users WHERE role != \'admin\' AND ban_duration != 0')
+
+            rows = cursor.fetchall()
+
+            keys = ('id', 'username', 'email', 'role', 'status')
+
+            return [{key: value for key, value in zip(keys, row)} for row in rows]
+
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot get users')
+            return []
+        
+    def promote_user(self, user_id: int, vKey: str, admin_id: int) -> bool:
+
+        if not self.check_admin(admin_id, vKey):
+            self.log_error('Unauthorized')
+            return False
+        
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('UPDATE users SET role = \'moderator\' WHERE id = %s', (user_id,))
+
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot promote user')
+            return False
+        
+    def demote_user(self, user_id: int, vKey: str, admin_id: int) -> bool:
+            
+        if not self.check_admin(admin_id, vKey):
+            self.log_error('Unauthorized')
+            return False
+        
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('UPDATE users SET role = \'user\' WHERE id = %s', (user_id,))
+
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot demote user')
+            return False
 
     def __del__(self) -> None:
         """ close the database connection """

@@ -1,7 +1,6 @@
 from fastapi import WebSocket
 from src.sql import Database
 
-#TODO: Finish migration
 class SocketsManager:
     def __init__(self) -> None:
         self.activeChatsSockets: list[dict] = []

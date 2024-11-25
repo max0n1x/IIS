@@ -38,6 +38,7 @@ class ItemUpdate(BaseModel):
 
 class User(BaseModel):
     password: str
+    username: Optional[str] = None
     email: str
 
 class UserVerify(BaseModel):
@@ -99,5 +100,28 @@ class PasswordReset(BaseModel):
 class Report(BaseModel):
     item_id: int
     reason: str
+
+class GetReport(BaseModel):
+    report_id: int
+    user_id: int
+    vKey: str
+
+class ReportResolve(BaseModel):
+    report_id: int
+    action : str
+    ban_duration : Optional[str] = None
+    user_id: int
+    vKey: str
+
+class MailChange(BaseModel):
+    user_id: int
+    admin_id: int
+    vKey: str
+    email: str
+
+class PromoteUser(BaseModel):
+    user_id: int
+    admin_id: int
+    vKey: str
 
     

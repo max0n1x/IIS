@@ -8,7 +8,8 @@
 */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import HeaderImage from '../images/header_img.png';
 import ResetPasswordStyles from './ResetPasswordPage.module.css';
 import { fixElementHeight, API_BASE_URL } from '../Utils';
 import '../GlobalStyles.css';
@@ -28,10 +29,29 @@ const ResetPasswordPage: React.FC = () => {
 		setTimeout(() => setError(''), 2000);
 	}
 
-	// const checkPassword = (password : string) => {
-	// 	const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
-	// 	return re.test(password);
-	// }
+	const checkPassword = (password : string) => {
+		const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
+		return re.test(password);
+	}
+
+	const handlePasswordStrength = (e : React.ChangeEvent<HTMLInputElement>) => {
+		const password = e.target.value;
+
+		if (e.target.name === 'password') {
+			setPassword(password);
+		} else {
+			setConfirmPassword(password);
+		}
+
+		if (!checkPassword(password)) {
+			e.target.style.outline = 'none';
+			e.target.style.border = '2px solid red';
+		} else {
+			e.target.style.border = '';
+			e.target.style.outline = '';
+		}
+
+	}
 
 	const handleResetPassword = async () => {
 
@@ -44,11 +64,6 @@ const ResetPasswordPage: React.FC = () => {
 			showErrorMessage('Passwords do not match');
 			return;
 		}
-
-		// if (!checkPassword(password)) {
-		// 	showErrorMessage('Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number');
-		// 	return;
-		// }
 
 		const urlParams = new URLSearchParams(window.location.search);
 		const token = urlParams.get('token');
@@ -115,8 +130,12 @@ const ResetPasswordPage: React.FC = () => {
     return (
         <div>
 
-            <div className="header" ref={headerRef}>
-                <div className="header-item"></div>
+			<div className="header" ref={headerRef}>
+                <div className="header-item">
+                    <Link to="/" className="home">
+                        <img className="header-logo" alt="Header Logo" src={HeaderImage} id="logo" />
+                    </Link>
+                </div>
             </div>
 
             <div className={ResetPasswordStyles['register-form']}></div>
@@ -126,12 +145,12 @@ const ResetPasswordPage: React.FC = () => {
 
             <label htmlFor="password" className={ResetPasswordStyles['password-label']}>New password:</label>
             <input type="password" name="password" className={ResetPasswordStyles['password-input']}
-                    onChange={e => setPassword(e.target.value)} />
+                    onChange={handlePasswordStrength} />
 			<div>?</div>
 
             <label htmlFor="confirm-password" className={ResetPasswordStyles['password-label1']}>Confirm password:</label>
             <input type="password" name="confirm-password" className={ResetPasswordStyles['password-input1']}
-                    onChange={e => setConfirmPassword(e.target.value)} />
+                    onChange={handlePasswordStrength} />
 
             <input type="submit" value="Reset password" className={ResetPasswordStyles['sign-up-btn']} onClick={handleResetPassword} />
                     

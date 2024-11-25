@@ -12,14 +12,14 @@
 }
 
 .username-label {
-    top: 30%;
+    top: 20%;
     left: 36.39%;
     width: 27.22%;
     height: 5.86%;
 }
 
 .email-label {
-    top: 40%;
+    top: 35%;
     left: 36.39%;
     width: 27.22%;
     height: 5.86%;
@@ -33,7 +33,7 @@
 }
 
 .password-label1 {
-    top: 60%;
+    top: 65%;
     left: 36.39%;
     width: 27.22%;
     height: 5.86%;
@@ -56,28 +56,28 @@
 }
 
 .username-input {
-    top: 35%;
+    top: 27.5%;
     left: 36.39%;
     width: 27.22%;
     height: 4.88%;
 }
 
 .email-input {
-    top: 45%;
+    top: 42.5%;
     left: 36.39%;
     width: 27.22%;
     height: 4.88%;
 }
 
 .password-input {
-    top: 55%;
+    top: 57.5%;
     left: 36.39%;
     width: 27.22%;
     height: 4.88%;
 }
 
 .password-input1 {
-    top: 65%;
+    top: 72.5%;
     left: 36.39%;
     width: 27.22%;
     height: 4.88%;
@@ -85,16 +85,16 @@
 
 .register-form {
     position: absolute;
-    top: 30.53%;
+    top: 20vh;
     left: 33.33%;
     width: 33.33%;
-    height: 50%;
+    height: 70vh;
     background-color: rgba(217, 217, 217, 0.7);
 }
 
 .error {
     position: absolute;
-    top: 75%;
+    top: 90%;
     left: 33.3%;
     width: 33.33%;
     height: auto;
@@ -107,7 +107,7 @@
 
 .sign-up-btn {
     position: absolute;
-    top: 70%;
+    top: 80%;
     left: 36.46%;
     width: 27.22%;
     height: 6.84%;
@@ -124,4 +124,21 @@
 
 .sign-up-btn:hover {
     background-color: lightgray;
+}
+
+.mandatory-fields {
+    position: absolute;
+    top: 15vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20%; 
+    height: 6.84%;
+    border-radius: 20px;
+    border: none;
+    font-size: 1.3em;
+    color: var(--blue);
+    font-family: var(--font-inria-serif);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

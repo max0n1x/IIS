@@ -8,7 +8,8 @@
 */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import HeaderImage from '../images/header_img.png';
 import RegisterPageStyle from './RegisterPage.module.css';
 import { fixElementHeight, API_BASE_URL } from '../Utils';
 import '../GlobalStyles.css';
@@ -28,10 +29,43 @@ const RegisterPage: React.FC = () => {
 		return re.test(email);
     };
 
-	// const checkPassword = (password : string) => {
-	// 	const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
-	// 	return re.test(password);
-	// }
+	const checkPassword = (password : string) => {
+		const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
+		return re.test(password);
+	}
+
+	const passwordStrength = (e : React.ChangeEvent<HTMLInputElement>) => {
+		const password = e.target.value;
+
+		if (e.target.name === 'password') {
+			setPassword(password);
+		} else {
+			setConfirmPassword(password);
+		}
+
+		if (!checkPassword(password)) {
+			e.target.style.outline = 'none';
+			e.target.style.border = '2px solid red';
+		} else {
+			e.target.style.border = '';
+			e.target.style.outline = '';
+		}
+
+	}
+
+	const emailValidation = (e : React.ChangeEvent<HTMLInputElement>) => {
+		const email = e.target.value;
+
+		setEmail(email);
+
+		if (!validateEmail(email)) {
+			e.target.style.outline = 'none';
+			e.target.style.border = '2px solid red';
+		} else {
+			e.target.style.border = '';
+			e.target.style.outline = '';
+		}
+	}
 
     useEffect(() => {
 
@@ -48,6 +82,8 @@ const RegisterPage: React.FC = () => {
 			return;
         } 
 
+		console.log(email);
+
         if (password !== confirmPassword) {
           setError("Passwords do not match");
           return;
@@ -56,12 +92,7 @@ const RegisterPage: React.FC = () => {
         if (!validateEmail(email)) {
           setError("Invalid email address");
           return;
-        }
-
-		// if (!checkPassword(password)) {
-		//   setError("Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number");
-		//   return;
-		// }
+		}
     
         const data = {
           username: username,
@@ -97,27 +128,33 @@ const RegisterPage: React.FC = () => {
     return (
         <div>
 
-            <div className="header" ref={headerRef}>
-                <div className="header-item"></div>
+			<div className="header" ref={headerRef}>
+                <div className="header-item">
+                    <Link to="/" className="home">
+                        <img className="header-logo" alt="Header Logo" src={HeaderImage} id="logo" />
+                    </Link>
+                </div>
             </div>
+
+			<div className={RegisterPageStyle['mandatory-fields']}>Fields marked with <span style={{ color: "red" }}>*</span> are mandatory</div>
 
             <div className={RegisterPageStyle['register-form']}></div>
 
-            <label htmlFor="username" className={RegisterPageStyle['username-label']}>Login:</label>
+            <label htmlFor="username" className={RegisterPageStyle['username-label']}>Login<span style={{ color: "red" }}>*</span></label>
             <input type="text" name="username" className={RegisterPageStyle['username-input']}
                     onChange={e => setUsername(e.target.value)} />
 
-            <label htmlFor="email" className={RegisterPageStyle['email-label']}>Email:</label>
+            <label htmlFor="email" className={RegisterPageStyle['email-label']}>Email<span style={{ color: "red" }}>*</span></label>
             <input type="email" name="email" className={RegisterPageStyle['email-input']}
-                    onChange={e => setEmail(e.target.value)} />
+                    onChange={emailValidation} />
 
-            <label htmlFor="password" className={RegisterPageStyle['password-label']}>Password:</label>
+            <label htmlFor="password" className={RegisterPageStyle['password-label']}>Password<span style={{ color: "red" }}>*</span></label>
             <input type="password" name="password" className={RegisterPageStyle['password-input']}
-                    onChange={e => setPassword(e.target.value)} />
+                    onChange={passwordStrength} />
 
-            <label htmlFor="confirm-password" className={RegisterPageStyle['password-label1']}>Confirm password:</label>
+            <label htmlFor="confirm-password" className={RegisterPageStyle['password-label1']}>Confirm password<span style={{ color: "red" }}>*</span></label>
             <input type="password" name="confirm-password" className={RegisterPageStyle['password-input1']}
-                    onChange={e => setConfirmPassword(e.target.value)} />
+                    onChange={passwordStrength} />
 
             <input type="submit" value="Create Account" className={RegisterPageStyle['sign-up-btn']}
                     onClick={handleRegister} />

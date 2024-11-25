@@ -171,7 +171,8 @@
     border: 1px solid #ccc;
 }
 
-.report-button {
+.report-button,
+.resolve-button {
     height: 50px;
     margin-top: 20px;
     background-color: #f5c6cb;
@@ -194,4 +195,31 @@
 
 .report-button:active {
     background-color: #e87b99;
+}
+
+.report-reason,
+.report-created {
+    width: 100%;
+    max-width: 250px;
+    font-size: 1.2em;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 2px solid #ccc;
+    color: red;
+    font-weight: 700;
+}
+
+.resolve-button {
+    background-color: #c3e6cb;
+    margin-top: 10px;
+}
+
+.resolve-button:hover {
+    cursor: pointer;
+    background-color: #a9d5b9;
+}
+
+.resolve-button:active {
+    background-color: #8cc1a0;
 }

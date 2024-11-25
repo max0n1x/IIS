@@ -5,7 +5,9 @@
  * @author Maksym Podhornyi - xpodho08
 */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef} from 'react';
+import { Link } from 'react-router-dom';
+import HeaderImage from "../images/header_img.png";
 import { useNavigate } from 'react-router-dom';
 import ForgotPasswordPageStyle from './ForgotPasswordPage.module.css';
 import { fixElementHeight, API_BASE_URL} from '../Utils';
@@ -15,7 +17,7 @@ const ForgotPasswordPage: React.FC = () => {
     const [email, setEmail] = useState<string>('');
     const [error, setError] = useState<string>('');
     const [successMessage, setSuccessMessage] = useState<string>('');
-    const headerRef = useRef<HTMLDivElement | null>(null);
+    const headerRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
 
@@ -23,6 +25,20 @@ const ForgotPasswordPage: React.FC = () => {
         const re = /\S+@\S+\.\S+/;
         return re.test(email);
     };
+
+    const emailValidation = (e : React.ChangeEvent<HTMLInputElement>) => {
+		const email = e.target.value;
+
+		setEmail(email);
+
+		if (!validateEmail(email)) {
+			e.target.style.outline = 'none';
+			e.target.style.border = '2px solid red';
+		} else {
+			e.target.style.border = '';
+			e.target.style.outline = '';
+		}
+	}
 
     const handleSubmit = async () => {
 
@@ -76,13 +92,19 @@ const ForgotPasswordPage: React.FC = () => {
             fixElementHeight(headerRef.current);
         }
 
+        // get elemenet by id
+
     }, [navigate]);
 
     return (
         <div className={ForgotPasswordPageStyle['page-container']}>
 
             <div className="header" ref={headerRef}>
-                <div className="header-item"></div>
+                <div className="header-item">
+                    <Link to="/" className="home">
+                        <img className="header-logo" alt="Header Logo" src={HeaderImage} id="logo" />
+                    </Link>
+                </div>
             </div>
 
             <div className={ForgotPasswordPageStyle['forgot-password-box']}>
@@ -97,7 +119,7 @@ const ForgotPasswordPage: React.FC = () => {
                     name="email"
                     className={ForgotPasswordPageStyle['email-input']}
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={emailValidation}
                 />
 
                 <div className={ForgotPasswordPageStyle['button-container']}>

@@ -28,14 +28,20 @@ const ItemPage: React.FC = () => {
     const [ItemImage, setItemImage] = useState("");
     const [ItemSeller, setItemSeller] = useState("");
     const [ReportReason, setReportReason] = useState("");
+    const [ReportReasonUser, setReportReasonUser] = useState("");
+    const [ReportResolve, setReportResolve] = useState("");
+    const [ReportCreated, setReportCreated] = useState("");
     const [adminLoggedIn, setAdminLoggedIn] = useState(false);
     const [userLoggedIn, setUserLoggedIn] = useState(false);
+    const [isReport, setIsReport] = useState(false);
+    const [banDuration, setBanDuration] = useState<string | null>(null);
 
     const navigate = useNavigate();
     const location = useLocation();
 
     const queryParams = new URLSearchParams(location.search);
     const item_id = queryParams.get('item_id');
+    const report_id = queryParams.get('report_id');
 
     const CreateChat = async () => {
         const cookies = document.cookie.split(';');
@@ -88,30 +94,90 @@ const ItemPage: React.FC = () => {
         }
     };
 
-    const handleReport = async () => {
-        if (!ReportReason) {
-            alert("Please select a reason for reporting.");
+    const resolveAction = async (action: string) => {
+        setReportResolve(action);
+
+        if (action === "ban") {
+            const dur = window.prompt("Enter duration of ban in days(0 for permanent):")
+
+            if (dur && !isNaN(parseInt(dur))) {
+                setBanDuration(dur);
+            } else {
+                alert("Invalid duration");
+            }
+
+        }
+
+    };
+
+    const handleAction = async () => {
+        // 
+    };
+
+    const handleResolve = async () => {
+
+        if (!ReportResolve) {
+            alert("Please select a resolve action.");
             return;
         }
 
         const cookies = document.cookie.split(';');
-        const user = cookies.find(cookie => cookie.includes('user_id'));
+
+        if (!cookies) {
+            navigate('/login');
+            return;
+        }
+
+        const user_id = cookies.find(cookie => cookie.includes('user_id'));
         const vKey = cookies.find(cookie => cookie.includes('vKey'));
 
-        if (!user || !vKey) {
+        if (!user_id || !vKey) {
             navigate('/login');
             return;
         }
 
         const data = {
-            item_id: item_id,
-            user_id: user.split('=')[1],
-            vKey: vKey.split('=')[1],
-            report_reason: ReportReason
+            report_id: report_id,
+            action: ReportResolve,
+            ban_duration: banDuration,
+            user_id: user_id.split('=')[1],
+            vKey: vKey.split('=')[1]
         };
 
         try {
-            const response = await fetch(API_BASE_URL + "/report", {
+            const response = await fetch(API_BASE_URL + "/report/resolve", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert("Report resolved successfully.");
+                navigate('/admin');
+            } else {
+                alert("An error occurred while resolving the report.");
+            }
+        } catch (err) {
+            alert("An error occurred. Please try again.");
+        }
+    };
+
+    const handleReport = async () => {
+
+        if (!ReportReasonUser) {
+            alert("Please select a reason for reporting.");
+            return;
+        }
+
+        const data = {
+            item_id: item_id,
+            reason: ReportReasonUser
+        };
+
+        try {
+            const response = await fetch(API_BASE_URL + "/report/create", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -121,6 +187,7 @@ const ItemPage: React.FC = () => {
 
             if (response.ok) {
                 alert("Thank you for reporting. We will review the item.");
+                navigate('/');
             } else {
                 alert("An error occurred while submitting your report.");
             }
@@ -138,6 +205,10 @@ const ItemPage: React.FC = () => {
         if (!item_id) {
             navigate('*');
             return;
+        }
+
+        if (report_id) {
+            setIsReport(true);
         }
 
         GetItem(item_id).then((item) => {
@@ -180,8 +251,54 @@ const ItemPage: React.FC = () => {
         );}
 
         loggedInCheck();
+
+        if (adminLoggedIn) {
+
+            const cookies = document.cookie.split(';');
+
+            if (!cookies) {
+                navigate('/login');
+                return;
+            }
+
+            const user_id = cookies.find(cookie => cookie.includes('user_id'));
+            const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+            if (!user_id || !vKey) {
+                navigate('/login');
+                return;
+            }
+            
+            if (report_id) {
+                const response = fetch(API_BASE_URL + "/report", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ report_id: report_id, user_id: user_id.split('=')[1], vKey: vKey.split('=')[1] })
+                });
+
+                response.then(res => {
+                    if (res.ok) {
+
+                        res.json().then(data => {
+
+                            setReportReason(data.reason);
+                            const date = new Date(data.time);
+                            setReportCreated(date.toLocaleString('en-GB', { timeZone: 'Europe/Prague' }));
+
+                        });
+
+                    } else {
+                        console.log("Failed to fetch report reason");
+                    }
+
+                });
+            }
+        }
+
                 
-    }, [navigate, location, item_id, ItemSeller]);
+    }, [navigate, location, item_id, ItemSeller, loggedIn, logInRef, adminLoggedIn]);
 
     return (
         <div>
@@ -216,10 +333,9 @@ const ItemPage: React.FC = () => {
                     </div>
                 </div>
 
-                {(adminLoggedIn || userLoggedIn) && (
-                    <input type="submit" className={ItemPageStyle["contact-seller-button"]} ref={contactRef}
-                        onClick={CreateChat} value="Contact seller" />
-                )}
+                <input type="submit" className={ItemPageStyle["contact-seller-button"]} ref={contactRef}
+                    onClick={CreateChat} value="Contact seller" />
+
 
                 {userLoggedIn && (
                     <div className={ItemPageStyle["report-section"]}>
@@ -228,7 +344,7 @@ const ItemPage: React.FC = () => {
                             id="report-reason"
                             ref={reportRef}
                             className={ItemPageStyle["report-dropdown"]}
-                            onChange={(e) => setReportReason(e.target.value)}
+                            onChange={(e) => setReportReasonUser(e.target.value)}
                         >
                             <option value="">Select reason</option>
                             <option value="Inappropriate content">Inappropriate content</option>
@@ -241,6 +357,51 @@ const ItemPage: React.FC = () => {
                         </button>
                     </div>
                 )}
+
+                {adminLoggedIn && isReport && (
+                    <div className={ItemPageStyle["report-section"]}>
+
+                        <div className={ItemPageStyle["report-reason"]}>Reason: {ReportReason}</div>
+
+                        <div className={ItemPageStyle["report-created"]}>Reported at: {ReportCreated}</div>
+                        
+                        <label htmlFor="report-reason" className={ItemPageStyle["report-label"]}>Resolve:</label>
+                        <select
+                            id="report-reason"
+                            ref={reportRef}
+                            className={ItemPageStyle["report-dropdown"]}
+                            onChange={(e) => resolveAction(e.target.value)}
+                        >
+                            <option value="">Select resolve action</option>
+                            <option value="delete">Delete item</option>
+                            <option value="ignore">Ignore report</option>
+                            <option value="ban">Ban user and delete item</option>
+                        </select>
+                        <button className={ItemPageStyle["resolve-button"]} onClick={handleResolve}>
+                            Resolve Report
+                        </button>
+                    </div>
+                )}
+
+                {adminLoggedIn && !isReport && (
+                    <div className={ItemPageStyle["report-section"]}>
+                        
+                        <select
+                            id="report-reason"
+                            ref={reportRef}
+                            className={ItemPageStyle["report-dropdown"]}
+                            onChange={(e) => resolveAction(e.target.value)}
+                        >
+                            <option value="">Select action</option>
+                            <option value="delete">Delete item</option>
+                            <option value="ban">Ban user and delete item</option>
+                        </select>
+                        <button className={ItemPageStyle["resolve-button"]} onClick={handleAction}>
+                            Take Action
+                        </button>
+                    </div>
+                )}
+
             </div>
             <Contacts />
         </div>

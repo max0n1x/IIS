@@ -7,7 +7,7 @@
  * @author Maksym Podhornyi - xpodho08
  */
 
-import React, { useEffect, useRef, useState, startTransition } from "react";
+import React, { useEffect, useRef, useState, startTransition, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { fixElementHeight, checkLogin, Header, API_BASE_URL } from "../Utils";
 import AdminPageStyles from "./AdminPage.module.css"; // Admin-specific styles
@@ -33,8 +33,286 @@ const AdminPage: React.FC = () => {
         errorsLogged: 0,
     });
 
+    interface Report {
+        id: number;
+        item_id: number;
+        reason: string;
+        time : string;
+    }
+
+    interface User {
+        id: number;
+        email: string;
+        status: string;
+        username: string;
+        role: string;
+    }
+
+    const [reports, setReports] = useState<Report[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
+
     const [importantMsg, setImportantMsg] = useState<string | boolean>("");
     const [error, setError] = useState<string>("");
+
+    const generateReport = (link : string, title : string, content : string) => {
+        return (
+            <div key={title}
+                className={AdminPageStyles["report"]}
+                onClick={() => navigate(link)}
+            >
+                <label>{title}</label>
+                <div className={AdminPageStyles["report-value"]}>
+                    {content}
+                </div>
+            </div>
+        );
+    };   
+
+    const validateEmail = (email : string) => {
+        const re = /\S+@\S+\.\S+/;
+        return re.test(email);
+    }
+
+    const changeUserEmail = (e : React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+
+        const userId = e.currentTarget.getAttribute('data-user-id');
+
+        if (!userId) {
+            return;
+        }
+
+        const newEmail = prompt("Enter new email for this user");
+
+        if (!newEmail) {
+            return;
+        }
+
+        if (!validateEmail(newEmail)) {
+            setError('Invalid email address');
+            setTimeout(() => setError(''), 5000);
+            return;
+        }
+
+        const cookies = document.cookie.split(';');
+
+        if(!cookies){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const adminId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if(!adminId || !vKey){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const data = {
+            admin_id: adminId.split('=')[1],
+            vKey: vKey.split('=')[1],
+            new_email: newEmail,
+            user_id: userId
+        };
+
+        fetch(API_BASE_URL + "/admin/change_email", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then((response) => {
+            if (response.ok) {
+                return;
+            } else {
+                throw new Error('Failed to change email');
+            }
+        }).catch((error) => {
+            console.error("Error changing email:", error);
+            setError("Failed to change email");
+            setTimeout(() => setError(''), 5000);
+        });
+
+    }
+
+    const promoteUser = (e : React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+
+        const userId = e.currentTarget.getAttribute('data-user-id');
+
+        if (!userId) {
+            return;
+        }
+
+        if (e.currentTarget.getAttribute('data-user-role') === 'moderator') {
+            setError('User is already a moderator');
+            setTimeout(() => setError(''), 5000);
+            return;
+        }
+
+        const cookies = document.cookie.split(';');
+
+        if(!cookies){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const adminId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if(!adminId || !vKey){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const data = {
+            admin_id: adminId.split('=')[1],
+            vKey: vKey.split('=')[1],
+            user_id: userId
+        };
+
+        fetch(API_BASE_URL + "/user/promote", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then((response) => {
+            if (response.ok) {
+                fetchUsers();
+                return;
+            } else {
+                throw new Error('Failed to promote user');
+            }
+        }).catch((error) => {
+            console.error("Error promoting user:", error);
+            setError("Failed to promote user");
+            setTimeout(() => setError(''), 5000);
+        });
+
+    }
+
+    const demoteUser = (e : React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+
+        const userId = e.currentTarget.getAttribute('data-user-id');
+
+        if (!userId) {
+            return;
+        }
+
+        if (e.currentTarget.getAttribute('data-user-role') === 'user') {
+            setError('User is already a user');
+            setTimeout(() => setError(''), 5000);
+            return;
+        }
+
+        const cookies = document.cookie.split(';');
+
+        if(!cookies){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const adminId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if(!adminId || !vKey){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const data = {
+            admin_id: adminId.split('=')[1],
+            vKey: vKey.split('=')[1],
+            user_id: userId
+        };
+
+        fetch(API_BASE_URL + "/user/demote", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then((response) => {
+            if (response.ok) {
+                fetchUsers();
+                return;
+            } else {
+                throw new Error('Failed to demote user');
+            }
+        }).catch((error) => {
+            console.error("Error demoting user:", error);
+            setError("Failed to demote user");
+            setTimeout(() => setError(''), 5000);
+        });
+
+    }
+
+    const banUser = (e : React.MouseEvent<HTMLDivElement>) => {
+
+        const userId = e.currentTarget.getAttribute('data-user-id');
+
+        if (!userId) {
+            return;
+        }
+
+        const previousStatus = e.currentTarget.getAttribute('data-previous-status');
+
+        if (previousStatus === 'banned') {
+            setError('User is already banned');
+            setTimeout(() => setError(''), 5000);
+            return;
+        }
+
+        const duration = prompt("Enter ban duration in hours, 0 for permanent ban");
+
+        if (!duration) {
+            return;
+        }
+
+        const cookies = document.cookie.split(';');
+
+        if(!cookies){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const adminId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if(!adminId || !vKey){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const data = {
+            admin_id: adminId.split('=')[1],
+            vKey: vKey.split('=')[1],
+            user_id: userId
+        };
+    }
+
+    const unbanUser = (e : React.MouseEvent<HTMLDivElement>) => {
+    }
+    
+    const generateUser = (email : string, status : string, id : number, username : string, role : string) => {
+        return (
+            <div key={id} className={AdminPageStyles["action"]}>
+                <label>{username} (email: {email}):</label>
+                <div className={AdminPageStyles["action-value"]}>Status: {status}</div>
+                <div className={AdminPageStyles["action-value"]}>Role: {role}</div>
+                <div className={AdminPageStyles["btns-container"]}>
+                    <div className={AdminPageStyles["action-btn"]} data-user-id={id} onClick={changeUserEmail}></div>
+                    <div className={AdminPageStyles["action-btn"]} data-user-id={id} data-user-role={role} onClick={promoteUser}></div>
+                    <div className={AdminPageStyles["action-btn"]} data-user-id={id} data-user-role={role} onClick={demoteUser}></div>
+                    <div className={AdminPageStyles["action-btn"]} data-user-id={id} data-previous-status={status} onClick={banUser}></div>
+                    <div className={AdminPageStyles["action-btn"]} data-user-id={id} data-previous-status={status} onClick={unbanUser}></div>
+                </div>
+            </div>
+        );
+    }
 
     const handleLogOutClick = async () => {
         const cookies = document.cookie.split(';');
@@ -77,16 +355,122 @@ const AdminPage: React.FC = () => {
         } catch (err) {
             console.error('Error:', err);
             setError("Failed to connect to the server");
+            setTimeout(() => setError(''), 5000);
         }
 
         startTransition(() => { navigate('/'); });
-    }
+    };
 
-    const fetchWebsiteStats = async () => {
+    const fetchUsers = useCallback(async () => {
+
+        const cookies = document.cookie.split(';');
+
+        if(!cookies){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const userId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if(!userId || !vKey){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+        
         try {
+
+            const response = await fetch(`${API_BASE_URL}/admin/get_users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId.split('=')[1],
+                    vKey: vKey.split('=')[1]
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setUsers(data);
+            } else {
+                throw new Error('Failed to fetch users');
+            }
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            setError("Failed to fetch users");
+            setTimeout(() => setError(''), 5000);
+        }
+
+    }, []);
+
+    const fetchReports = useCallback(async () => {
+        
+        const cookies = document.cookie.split(';');
+
+        if(!cookies){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const userId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if(!userId || !vKey){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        try {
+
+            const response = await fetch(`${API_BASE_URL}/reports`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId.split('=')[1],
+                    vKey: vKey.split('=')[1]
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setReports(data);
+            } else {
+                throw new Error('Failed to fetch reports');
+            }
+        } catch (error) {
+            console.error("Error fetching reports:", error);
+            setError("Failed to fetch reports");
+            setTimeout(() => setError(''), 5000);
+        }
+
+    }, [navigate]);
+
+    const fetchWebsiteStats = useCallback(async () => {
+
+        const cookies = document.cookie.split(';');
+
+        if(!cookies){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const userId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if(!userId || !vKey){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        try {
+
             const response = await fetch(`${API_BASE_URL}/admin/stats`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId.split('=')[1],
+                    vKey: vKey.split('=')[1]
+                })
             });
 
             if (response.ok) {
@@ -106,8 +490,9 @@ const AdminPage: React.FC = () => {
         } catch (error) {
             console.error("Error fetching stats:", error);
             setError("Failed to fetch website statistics");
+            setTimeout(() => setError(''), 5000);
         }
-    };
+    }, [navigate]);
 
     useEffect(() => {
         if (headerRef.current) {
@@ -128,7 +513,28 @@ const AdminPage: React.FC = () => {
         });
 
         fetchWebsiteStats();
-    }, []);
+        fetchReports();
+        fetchUsers();
+
+        const interv2 = setInterval(() => {
+            fetchWebsiteStats();
+        }, 60000);
+
+        const interv1 = setInterval(() => {
+            fetchReports();
+        }, 60000);
+
+        const interv3 = setInterval(() => {
+            fetchUsers();
+        }, 60000);
+
+        return () => {
+            clearInterval(interv1);
+            clearInterval(interv2);
+            clearInterval(interv3);
+        }
+
+    }, [fetchWebsiteStats, navigate, fetchReports]);
 
     return (
         <div>
@@ -160,6 +566,25 @@ const AdminPage: React.FC = () => {
                         <label>Errors Logged:</label>
                         <div className={AdminPageStyles["stat-value"]}>{websiteStats.errorsLogged}</div>
                     </div>
+                </div>
+    
+                <div className={AdminPageStyles["reports-column"]}>
+                    <h2 className={AdminPageStyles["reports-title"]}>Reports</h2>
+                    {reports?.map((report) => generateReport(`/item?item_id=${report.item_id}&report_id=${report.id}`, `Report ${report.id}`, report.reason + " on item " + report.item_id))}
+                </div>
+
+                <div className={AdminPageStyles["actions-column"]}>
+                    <h2 className={AdminPageStyles["actions-title"]}>Users</h2>
+                    <div className={AdminPageStyles["action"]}>
+                        <label>User 1:</label>
+                        <div className={AdminPageStyles["action-value"]}>Status: Active</div>
+                        <div className={AdminPageStyles["btns-container"]}>
+                            <div className={AdminPageStyles["action-btn"]}></div>
+                            <div className={AdminPageStyles["action-btn"]}></div>
+                            <div className={AdminPageStyles["action-btn"]}></div>
+                        </div>
+                    </div>
+                    {users?.map((user) => generateUser(user.email, user.status, user.id, user.username, user.role))}
                 </div>
 
                 <div className={AdminPageStyles["actions-container"]}>

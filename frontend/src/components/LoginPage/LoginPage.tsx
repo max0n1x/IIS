@@ -8,6 +8,7 @@
 // Importing React and other necessary libraries and CSS modules.
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import HeaderImage from '../images/header_img.png';
 import LoginPageStyle from './LoginPage.module.css';
 import { API_BASE_URL, fixElementHeight, GetUserInformation } from '../Utils';
 import '../GlobalStyles.css';
@@ -23,11 +24,38 @@ const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    const headerRef = useRef<HTMLDivElement | null>(null);
+
     // useRef hook for referencing DOM elements.
     const elementRef = useRef(null);
 
     // Hook to programmatically navigate to different routes.
     const navigate = useNavigate();
+
+    const validateEmail = (email : string) => {
+        const re = /\S+@\S+\.\S+/;
+        return re.test(email);
+    }
+
+    const emailValidation = (e : React.ChangeEvent<HTMLInputElement>) => {
+		const email = e.target.value;
+
+		setEmail(email);
+
+        if (email === "admin") {
+            e.target.style.border = '';
+			e.target.style.outline = '';
+            return;
+        }
+
+		if (!validateEmail(email)) {
+			e.target.style.outline = 'none';
+			e.target.style.border = '2px solid red';
+		} else {
+			e.target.style.border = '';
+			e.target.style.outline = '';
+		}
+	}
 
     // useEffect hook for performing side effects, in this case, fixing element height on component mount.
     useEffect(() => {
@@ -65,6 +93,12 @@ const LoginPage: React.FC = () => {
         }
     }
 
+    useEffect(() => {
+        if (headerRef.current) {
+            fixElementHeight(headerRef.current);
+        }
+    }, []);
+
     // Async function to handle the login process.
     const login = async () => {
         const data = {
@@ -96,6 +130,9 @@ const LoginPage: React.FC = () => {
             } else if (response.status === 500) {
                 // Handling server errors.
                 setError("Server error");
+            } else if (response.status === 403) {
+                // Handling case where user is not verified.
+                setError("User is banned");
             } else {
                 // Handling other unspecified errors.
                 throw new Error('Something went wrong');
@@ -110,9 +147,13 @@ const LoginPage: React.FC = () => {
     // Render function for the component, using JSX.
     return (
         <div>
-            {/* Component header section */}
-            <div className="header" ref={elementRef}>
-                <div className="header-item"></div>
+
+            <div className="header" ref={headerRef}>
+                <div className="header-item">
+                    <Link to="/" className="home">
+                        <img className="header-logo" alt="Header Logo" src={HeaderImage} id="logo" />
+                    </Link>
+                </div>
             </div>
 
             {/* Login form container */}
@@ -123,7 +164,7 @@ const LoginPage: React.FC = () => {
                     className={LoginPageStyle['username-label']}>Email:</label>
             <input type="email" name="email"
                     className={LoginPageStyle['username-input']} id="username"
-                    onChange={e => setEmail(e.target.value)} />
+                    onChange={emailValidation} />
 
             {/* Password input field with dynamic visibility feature */}
             <label htmlFor="password" 

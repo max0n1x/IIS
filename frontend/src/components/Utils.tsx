@@ -15,7 +15,7 @@ import HeaderImage from "./images/header_img.png";
 import Vector from "./images/vector.png";
 import UserAvatar from "./images/user_avatar.png";
 import { Link } from "react-router-dom";
-import React, { forwardRef, Ref, MutableRefObject } from "react";
+import { forwardRef, Ref, MutableRefObject } from "react";
 
 // API base URL constant for server requests.
 export const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://garage-sale.cz/api/v1.0' : 'http://localhost:8080/api/v1.0';

@@ -1357,7 +1357,7 @@ class Database:
 
             cursor = self.conn.cursor()
 
-            cursor.execute('SELECT id, username, email, role, status, banned_at, ban_duration FROM users WHERE role != \'admin\' AND ban_duration != 0')
+            cursor.execute('SELECT id, username, email, role, status, banned_at, ban_duration FROM users WHERE role != \'admin\' AND ban_duration != 0 OR ban_duration IS NULL')
 
             rows = cursor.fetchall()
 

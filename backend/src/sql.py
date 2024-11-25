@@ -27,7 +27,7 @@ class Database:
                 port=DATABASE_PORT,
                 user=DATABASE_USER,
                 password=DATABASE_PASSWORD,
-                database='iis_test'
+                database='iis_prod'
             )
 
             if not self.conn:

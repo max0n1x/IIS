@@ -14,6 +14,8 @@ import manClothing from "../images/men_clothing.webp";
 import manBags from "../images/men_bags.webp";
 import manJewelry from "../images/men_jewelry.webp";
 import menAccessories from "../images/men_accesories.webp";
+import menShoes from "../images/man_shoes.webp";
+import menVintage from "../images/man_vintage.webp";
 import { fixElementHeight, checkLogin, Contacts, Header } from "../Utils";
 import "../GlobalStyles.css";
 
@@ -49,7 +51,7 @@ const MenCategoriesPage:React.FC = () => {
                         <div className="centered-text" style = {{color: "#093825"}}>Clothing</div>
                     </Link>
                     <Link className="category-item" to = "/items?categoryId=menShoes">
-                        <img src="https://donabees.co.uk/cdn/shop/products/mnz-v13tnV6D9lw-unsplash.jpg?v=1682244843&width=1946" alt="Shoes"/>
+                        <img src={menShoes} alt="Shoes"/>
                         <div className="centered-text" style = {{color: "var(--titanium)"}}>Shoes</div>
                     </Link>
                     <Link className="category-item" to = "/items?categoryId=menAccessories">
@@ -65,7 +67,7 @@ const MenCategoriesPage:React.FC = () => {
                         <div className="centered-text" style = {{color: "var(--titanium)"}}>Jewelry and watches</div>
                     </Link>
                     <Link className="category-item" to = "/items?categoryId=menVintage">
-                        <img src="https://okrok.cz/wp-content/uploads/2021/12/typewriter-g7715445ec_1280.jpg" alt="Vintage and collectibles"/>
+                        <img src={menVintage} alt="Vintage and collectibles"/>
                         <div className="centered-text" >
                             <span style={{color: "var(--blue)"}}>Vintage</span>
                             <span style={{color: "var(--titanium)"}}> and collectibles</span>

@@ -27,7 +27,7 @@ class Database:
                 port=DATABASE_PORT,
                 user=DATABASE_USER,
                 password=DATABASE_PASSWORD,
-                database='iis_prod'
+                database='iis_test'
             )
 
             if not self.conn:
@@ -39,12 +39,12 @@ class Database:
             cursor = self.conn.cursor()
 
             cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                            id INT PRIMARY KEY,
+                            id INT PRIMARY KEY AUTO_INCREMENT,
                             username VARCHAR(255) UNIQUE NOT NULL,
                             password_hash TEXT NOT NULL,
                             name TEXT,
                             surname TEXT,
-                            email TEXT UNIQUE NOT NULL,
+                            email VARCHAR(255) UNIQUE NOT NULL,
                             phone TEXT,
                             address TEXT,
                             date_of_birth TEXT,
@@ -67,13 +67,14 @@ class Database:
                             END;
             ''')
                            
-            cursor.execute('''INSERT INTO users (username, password_hash, role)
-                            VALUES (%s, %s, %s)
+            cursor.execute('''INSERT INTO users (username, password_hash, email, role)
+                            VALUES (%s, %s, %s, %s)
                             ON DUPLICATE KEY UPDATE 
                                 username = VALUES(username), 
                                 password_hash = VALUES(password_hash), 
-                                role = VALUES(role);
-                        ''', ('admin', Hasher().hash_password('admin'), 'admin'))
+                                email = VALUES(email), 
+                                role = VALUES(role);''',
+                        ('admin', Hasher().hash_password('admin'), 'admin', 'admin'))
 
             cursor.execute('''CREATE TABLE IF NOT EXISTS items (
                             id INT PRIMARY KEY AUTO_INCREMENT,
@@ -108,7 +109,8 @@ class Database:
             ''')
 
             cursor.execute('''CREATE TABLE IF NOT EXISTS validation_keys (
-                            user_id INT PRIMARY KEY NOT NULL,
+                            id INT PRIMARY KEY AUTO_INCREMENT,
+                            user_id INT NOT NULL,
                             vKey TEXT NOT NULL,
                             expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE);

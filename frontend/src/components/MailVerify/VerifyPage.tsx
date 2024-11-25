@@ -4,7 +4,7 @@
 
  * @brief ReactJS component of the verification page of the website
 
- * @author Maksym Podhornyi - xpodho08
+ * @author Neonila Mashlai - xmashl00
 */
 
 import React, { useState, useEffect, useRef } from 'react';

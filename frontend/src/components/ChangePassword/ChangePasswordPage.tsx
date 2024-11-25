@@ -2,7 +2,7 @@
  * Project: IIS project - Garage sale website
  * @file ChangePasswordPage.tsx
  * @brief ReactJS component for the "Change Password" page
- * @author Maksym Podhornyi - xpodho08
+ * @author Neonila Mashlai - xmashl00
 */
 
 import React, { useState, useEffect, useRef } from 'react';

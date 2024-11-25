@@ -13,38 +13,34 @@
 <!-- Zkontrolujte prosím nastavení kódování v hlavièce dokumentu 
      podle pou¾itého editoru -->
 
-<h1>Název zadání (editujte)</h1> <!-- Nahradte názvem svého zadání -->
+<h1>Vlastní Zadání (gará¾ový výprodej)</h1>
 
 <dl>
 	<dt>Autoøi</dt>
-	<dd>První jméno <!-- Nahraïte skuteèným jménem a e-mailem autora a popisem èinnosti -->
-	    <a href="mailto:xautor01@stud.fit.vutbr.cz">xautor01@stud.fit.vutbr.cz</a> -
-		popis èinnosti v týmu
+	<dd>Maksym Podhornyi
+	    <a href="mailto:xpodho08@stud.fit.vutbr.cz">xpodho08@stud.fit.vutbr.cz</a> - backend, sql, deployment
 	</dd>
-	<dd>Druhé jméno <!-- Nahraïte skuteèným jménem a e-mailem autora a popisem èinnosti -->
-	    <a href="mailto:xautor02@stud.fit.vutbr.cz">xautor02@stud.fit.vutbr.cz</a> - 
-		popis èinnosti v týmu
-	</dd>
-  <dd>Tøetí jméno <!-- Nahraïte skuteèným jménem a e-mailem autora a popisem èinnosti -->
-	    <a href="mailto:xautor03@stud.fit.vutbr.cz">xautor03@stud.fit.vutbr.cz</a> - 
-		popis èinnosti v týmu
+	<dd>Neonila Mashlai
+	    <a href="mailto:xmashl00@stud.fit.vutbr.cz">xmashl00@stud.fit.vutbr.cz</a> - frontend, design, deployment, documentation, testing
 	</dd>
 	<dt>URL aplikace</dt>
-	<dd><a href="http://www.stud.fit.vutbr.cz/~xautor01/IIS">http://www.stud.fit.vutbr.cz/~xautor01/IIS</a></dd>
-	<dd>(pokud má aplikace více vstupních stránek, napi¹te obdobnì dal¹í URL)</dd>
+	<dd><a href="http://www.stud.fit.vutbr.cz/~xpodho08/IIS">http://www.stud.fit.vutbr.cz/~xpodho08/IIS</a></dd>
 </dl>
 
 <h2>U¾ivatelé systému pro testování</h2>
-<p>Uveïte prosím existující zástupce <strong>v¹ech rolí u¾ivatelù</strong>.</p>
 <table>
 <tbody><tr><th>Login</th><th>Heslo</th><th>Role</th></tr>
 <tr><td>admin</td><td>admin</td><td>Administrátor</td></tr>
-<tr><td>prodavac</td><td>prodavac</td><td>Prodavaè</td></tr>
-<tr><td>franta</td><td>franta</td><td>Zákazník</td></tr>
+<tr><td>honza@vutbr.cz</td><td>prodavac</td><td>Prodavaè/Zákazník</td></tr>
+<tr><td>matej@vutbr.cz</td><td>moderator</td><td>Moderátor</td></tr>
 </tbody></table>
 
-<p>(Diagram pøípadù u¾ití není nutné vkládat, pokud IS implementuje role a pøípady u¾ití definované zadáním.)</p> 
+<p>Pro registrace nových u¾ivatelù je potøeba pou¾ít e-mailovou adresu na kterou je mo¾né pøijímat e-maily a pak ovìøit e-mailovou adresu.</p>
 
+<h2>Diagram pøípadù u¾ití</h2>
+<img src="docs/use-case.png" alt="Diagram pøípadù u¾ití">
+
+<!-- TODO -->
 <h3>Video</h3>
 
 <p>Pøilo¾te odkaz na komentované video demostrující pou¾ití informaèního
@@ -53,29 +49,322 @@ registrace u¾ivatele, správa u¾ivatelù a èinnosti jednotlivých rolí).
 Video nahrajte napøíklad na VUT Google Drive, kde ho bude mo¾né pøímo 
 spustit z odkazu.</p> 
 
+<!-- TODO -->
 <h2>Implementace</h2>
-<p>Struèná dokumentace k implementaci, která popisuje, které èásti 
-projektu (napø. PHP skripty) implementují jednotlivé pøípady pou¾ití.</p>
+
+<h3>Backend</h3>
+<p>Backend je napsán v jazyce Python s vyu¾itím frameworku FastAPI, pro komunikaci s databází je pou¾ita knihovna mysql-connector-python.</p>
+
+<h4>Role</h4>
+<ul>
+	<li>Administrátor</li>
+	<li>Prodavaè/Zákazník</li>
+	<li>Moderátor</li>
+</ul>
+
+Pokud u¾ivatel není pøihlá¹en, mù¾e se zaregistrovat, pøihlásit a zobrazit polo¾ky.
+Jeho náv¹tìva je zaznamenána v databázi pro statistiky.
+
+V¹echny API endpointy jsou definovány v <code>backend/src/api.py</code>
+V¹echny SQL dotazy jsou definovány v <code>backend/src/sql.py</code>
+
+<h4>Neautorizovaný u¾ivatel</h4>
+
+<p>API endpoint: <code>POST /api/v1.0/user/unauthorized</code><br>
+Zaznamenává náv¹tìvu neautorizovaného u¾ivatele do databáze pro statistiky.</p>
+
+<h4>Registrace</h4>
+
+<p>API endpoint: <code>POST /api/v1.0/code</code><br>
+Generuje ovìøovací kód a odesílá ho na e-mail u¾ivatele pro registraci.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/verify</code><br>
+Ovìøuje kód zadaný u¾ivatelem bìhem registrace.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/resend-code</code><br>
+Znovu ode¹le ovìøovací kód na e-mail u¾ivatele.</p>
+
+<h4>Pøihlá¹ení</h4>
+
+<p>API endpoint: <code>POST /api/v1.0/login</code><br>
+Pøihlásí u¾ivatele po ovìøení e-mailu a hesla.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/user/logout</code><br>
+Odhlásí u¾ivatele a invaliduje jeho validaèní klíè.</p>
+
+<h4>Zapomenuté heslo</h4>
+
+<p>API endpoint: <code>POST /api/v1.0/forgot-password</code><br>
+Ode¹le odkaz pro reset hesla na e-mail u¾ivatele.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/reset-password</code><br>
+Umo¾òuje u¾ivateli nastavit nové heslo pomocí platného tokenu.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/reset-password/check</code><br>
+Kontroluje platnost tokenu pro reset hesla.</p>
+
+<h4>Polo¾ky</h4>
+
+<p>API endpoint: <code>GET /api/v1.0/items/{category_id}/category</code><br>
+Vrací seznam polo¾ek v dané kategorii.</p>
+
+<p>API endpoint: <code>GET /api/v1.0/items/{item_id}</code><br>
+Vrací podrobnosti o konkrétní polo¾ce.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/item/create</code><br>
+Vytvoøí novou polo¾ku.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/item/delete</code><br>
+Odstraní polo¾ku vytvoøenou u¾ivatelem.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/item/update</code><br>
+Aktualizuje existující polo¾ku.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/item/action</code><br>
+Provádí administrativní akce, jako je smazání polo¾ky nebo její blokování.</p>
+
+<h4>Chat</h4>
+
+<p>API endpoint: <code>POST /api/v1.0/chat/create</code><br>
+Vytvoøí nový chat mezi u¾ivateli ohlednì konkrétní polo¾ky.</p>
+
+<p>API endpoint (WebSocket): <code>WS /api/v1.0/new/chat</code><br>
+Zaji¹»uje real-time zprávy pro jednu chatovací relaci.</p>
+
+<p>API endpoint (WebSocket): <code>WS /api/v1.0/new/chats</code><br>
+Poskytuje real-time aktualizace o aktivních chatech pro u¾ivatele.</p>
+
+<h4>Reporty</h4>
+
+<p>API endpoint: <code>POST /api/v1.0/report/create</code><br>
+Umo¾òuje u¾ivateli nahlásit polo¾ku kvùli poru¹ení pravidel.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/report</code><br>
+Vrací podrobnosti o konkrétním reportu.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/reports</code><br>
+Vrací seznam v¹ech reportù, obvykle pro administrátory nebo moderátory.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/report/resolve</code><br>
+Umo¾òuje administrátorùm nebo moderátorùm vyøe¹it report (napø. zablokování u¾ivatele, smazání polo¾ky).</p>
+
+<h4>Administrace</h4>
+
+<p>API endpoint: <code>POST /api/v1.0/user/promote</code><br>
+Pový¹í u¾ivatele na roli moderátora.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/user/demote</code><br>
+Degraduje moderátora zpìt na bì¾ného u¾ivatele.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/user/ban</code><br>
+Zablokuje u¾ivatele na urèitou dobu.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/user/unban</code><br>
+Zru¹í blokaci u¾ivatele.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/admin/change_email</code><br>
+Aktualizuje e-mail u¾ivatele prostøednictvím administrátora.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/admin/get_users</code><br>
+Vrací seznam v¹ech u¾ivatelù kromì administrátorù.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/admin/stats</code><br>
+Poskytuje statistiky platformy (napø. poèet u¾ivatelù, chyb, atd.).</p>
+
+<h4>Nahrávání obrázkù</h4>
+
+<p>API endpoint: <code>POST /api/v1.0/image/upload</code><br>
+Zaji¹»uje nahrávání obrázkù pro polo¾ky prostøednictvím imgur.</p>
+
+<h4>Profil</h4>
+
+<p>API endpoint: <code>POST /api/v1.0/user/update</code><br>
+Aktualizuje profilové informace u¾ivatele.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/user</code><br>
+Vrací podrobnosti o pøihlá¹eném u¾ivateli.</p>
+
+<p>API endpoint: <code>GET /api/v1.0/public/user/{user_id}</code><br>
+Vrací veøejné informace o u¾ivateli podle jeho ID.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/user/items</code><br>
+Vrací seznam v¹ech polo¾ek vytvoøených pøihlá¹eným u¾ivatelem.</p>
+
+<p>API endpoint: <code>POST /api/v1.0/user/delete</code><br>
+Sma¾e úèet pøihlá¹eného u¾ivatele.</p>
+
+<h4>Bezpeènost</h4>
+
+<p>Bezpeènost je klíèovou souèástí projektu a byla implementována na více úrovních, aby byla zaji¹tìna ochrana dat u¾ivatelù a integrita systému.</p>
+
+<h5>Ovìøování a autorizace</h5>
+<ul>
+    <li><b>Validaèní klíèe:</b> Ka¾dý u¾ivatel pøi pøihlá¹ení obdr¾í jedineèný validaèní klíè, který je nutný pro pøístup k chránìným API endpointùm. Tento klíè je platný pouze po omezenou dobu.</li>
+    <li><b>Role u¾ivatelù:</b> Systém vyu¾ívá roli u¾ivatele pro øízení pøístupu k rùzným funkcím platformy.</li>
+    <li><b>Kontrola oprávnìní:</b> Endpointy kontrolují, zda má u¾ivatel dostateèná práva pro provádìní urèitých akcí, jako je mazání polo¾ek nebo správa u¾ivatelù.</li>
+</ul>
+
+<h5>Ochrana dat</h5>
+<ul>
+    <li><b>©ifrování hesel:</b> Hesla jsou ukládána v databaze pouze ve formì bezpeèného hashovaného otisku (bcrypt), co¾ minimalizuje riziko jejich zneu¾ití v pøípadì úniku dat.</li>
+    <li><b>Tokeny s omezenou platností:</b> Resetovací odkazy a validaèní klíèe mají omezenou dobu platnosti, co¾ zvy¹uje bezpeènost proti zneu¾ití.</li>
+</ul>
+
+<h5>Bezpeènostní události</h5>
+<ul>
+    <li><b>Automatické mazání dat:</b> Systém automaticky odstraòuje expirované validaèní klíèe, resetovací odkazy a ovìøovací kódy, aby se minimalizovalo riziko zneu¾ití starých údajù.</li>
+    <li><b>Zaznamenávání chyb:</b> Ve¹keré chyby jsou zaznamenávány do databáze pro pozdìj¹í analýzu a opravu.</li>
+</ul>
+
+<h5>Prevence proti útokùm</h5>
+<ul>
+    <li><b>SQL injekce:</b> V¹echny SQL dotazy jsou pøipravovány s vyu¾itím parametrizovaných dotazù, co¾ zabraòuje SQL injekcím.</li>
+    <li><b>CORS:</b> Systém je chránìn proti neoprávnìnému pøístupu z cizích domén.</li>
+    <li><b>Omezení pøístupu:</b> Neautorizovaní u¾ivatelé mají pøístup pouze k veøejným funkcím, jako je registrace, pøihlá¹ení a prohlí¾ení polo¾ek.</li>
+</ul>
+
+<h5>Monitorování aktivity</h5>
+<ul>
+    <li><b>Zaznamenávání náv¹tìv:</b> Ka¾dá náv¹tìva neautorizovaného u¾ivatele je zaznamenána pro úèely analýzy a statistiky.</li>
+    <li><b>Správa banù:</b> Bìhem aktivní blokace je u¾ivatelský úèet omezen na urèité akce, dokud ban nevypr¹í.</li>
+</ul>
+
+<h3>Frontend</h3>
+
+<p>Frontend je napsán v jazyce TypeScript s vyu¾itím frameworku React.js</p>
+
+<h4>Endpointy</h4>
+<dl>
+	<dt>Home Page</dt>
+	<dd><code>GET /</code></dd>
+	<dt>Login Page</dt>
+	<dd><code>GET /login</code></dd>
+	<dt>Register Page</dt>
+	<dd><code>GET /register</code></dd>
+	<dt>User Profile Page</dt>
+	<dd><code>GET /profile</code></dd>
+	<dt>Men Categories Page</dt>
+	<dd><code>GET /men</code></dd>
+	<dt>Women Categories Page</dt>
+	<dd><code>GET /women</code></dd>
+	<dt>Kids Categories Page</dt>
+	<dd><code>GET /kids</code></dd>
+	<dt>Items List Page</dt>
+	<dd><code>GET /items</code></dd>
+	<dt>Add Item Page</dt>
+	<dd><code>GET /user/add-item</code></dd>
+	<dt>Edit Item Page</dt>
+	<dd><code>GET /user/edit-item</code></dd>
+	<dt>Item Page</dt>
+	<dd><code>GET /item</code></dd>
+	<dt>Chats Page</dt>
+	<dd><code>GET /user/chats</code></dd>
+	<dt>Admin Page</dt>
+	<dd><code>GET /admin</code></dd>
+	<dt>Verify Page</dt>
+	<dd><code>GET /verify</code></dd>
+	<dt>Forgot Password Page</dt>
+	<dd><code>GET /forgot-password</code></dd>
+	<dt>Change Password Page</dt>
+	<dd><code>GET /change-password</code></dd>
+	<dt>Reset Password Page</dt>
+	<dd><code>GET /reset-password</code></dd>
+	<dt>Moderator Page</dt>
+	<dd><code>GET /moderator</code></dd>
+</dl>
+
+In frontend side we implemented a lot of additional validations and checks to prevent any possible errors or aimed attacks.
 
 <h3>Databáze</h3>
-
-Zde vlo¾te grafické schéma relaèní databáze (tabulek v databázi).
+<img src="docs/erd.png" alt="Databáze">
 
 <h2>Instalace</h2>
 
-Struènì popi¹te: 
+<h4>Pøi prvním spu¹tìní je inicializována databáze a vytvoøen administrátorský u¾ivatel, konfiguraèní soubor s pøihla¹ovacími údaji se nachází v <code>backend/config.ini</code></h4>
+
+<h4>Po¾adované verze nástrojù</h4>
 <ul>
-<li>postup instalace na server,</li>
-<li>softwarové po¾adavky (verze PHP apod.),</li>
-<li>jak rozbalit, konfigurovat, inicializovat databázi, ...</li>
+	<li>Python: 3.10.6 nebo vy¹¹í</li>
+	<li>Node.js: 16 nebo vy¹¹í</li>
+	<li>Docker: nezale¾í na verzi</li>
 </ul>
 
+<h3>Mo¾nosti instalace</h3>
+
+<h4>Instalace pomocí Dockeru</h4>
+<ol>
+  <li>Sestavení kontejneru:
+    <pre><code>docker compose -f docker-compose.yml build</code></pre>
+  </li>
+</ol>
+
+<h4>Ruèní instalace</h4>
+
+<h5>Backend</h5>
+<ol>
+  <li>Pøesuòte se do slo¾ky <code>backend</code>:
+    <pre><code>cd backend</code></pre>
+  </li>
+  <li>Vytvoøte virtuální prostøedí:
+    <pre><code>python -m venv venv</code></pre>
+  </li>
+  <li>Aktivujte virtuální prostøedí:
+    <pre><code>source venv/bin/activate</code></pre>
+  </li>
+  <li>Nainstalujte po¾adované balíèky:
+    <pre><code>pip install -r requirements.txt</code></pre>
+  </li>
+</ol>
+
+<h5>Frontend</h5>
+<ol>
+  <li>Pøesuòte se do slo¾ky <code>frontend</code>:
+    <pre><code>cd frontend</code></pre>
+  </li>
+  <li>Nainstalujte závislosti:
+    <pre><code>npm install</code></pre>
+  </li>
+</ol>
+
+<h3>Pou¾ití</h3>
+
+<h4>Spu¹tìní pomocí Dockeru</h4>
+<pre><code>docker compose -f docker-compose.yml up -d</code></pre>
+
+<h4>Ruèní spu¹tìní</h4>
+<h5>Backend</h5>
+<ol>
+  <li>Pøesuòte se do slo¾ky <code>backend</code>:
+    <pre><code>cd backend</code></pre>
+  </li>
+  <li>Aktivujte virtuální prostøedí:
+    <pre><code>source venv/bin/activate</code></pre>
+  </li>
+  <li>Spus»te aplikaci:
+    <pre><code>python run.py</code></pre>
+  </li>
+  <li>Backend bude dostupný na adrese <code>http://localhost:8080/api/v1.0</code></li>
+</ol>
+
+<h5>Frontend</h5>
+<ol>
+  <li>Pøesuòte se do slo¾ky <code>frontend</code>:
+    <pre><code>cd frontend</code></pre>
+  </li>
+  <li>Vytvoøte build:
+    <pre><code>npm build</code></pre>
+  </li>
+  <li>Nainstalujte balíèek <code>serve</code> a spus»te aplikaci:
+    <pre><code>npm install -g serve</code></pre>
+    <pre><code>serve -s build</code></pre>
+  </li>
+  <li>Frontend bude dostupný na adrese <code>http://localhost:3000</code></li>
+</ol>
+
+<h4>Spu¹tìní backendu a frontendu souèasnì bez Dockeru</h4>
+<p>Mù¾ete pou¾ít nástroje jako <code>Tmux</code> nebo <code>Screen</code>.</p>
+
 <h2>Známé problémy</h2>
-<p>Zde popi¹te, které body zadání nejsou implementovány a z jakého 
-dùvodu. Napø. &#8222;Z èasových dùvodù nebyla implementována správa 
-u¾ivatelù.&#8221; Pomù¾ete tím zrychlit hodnocení, kdy¾ neimplementované 
-funkce nebudeme muset dlouze hledat.</p>
-
-
+<p>®ádné známé problémy nejsou.</p>
 
 <script src="doc_files/js.js"></script></body></html>

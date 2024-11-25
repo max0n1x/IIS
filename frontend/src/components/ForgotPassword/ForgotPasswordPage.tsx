@@ -2,7 +2,7 @@
  * Project: IIS project - Garage sale website
  * @file ForgotPasswordPage.tsx
  * @brief ReactJS component for the "Forgot Password" page
- * @author Maksym Podhornyi - xpodho08
+ * @author Neonila Mashlai - xmashl00
 */
 
 import React, { useState, useEffect, useRef} from 'react';

@@ -50,7 +50,7 @@ class Database:
                             date_of_birth TEXT,
                             role VARCHAR(255) DEFAULT 'user',
                             status VARCHAR(255) DEFAULT 'active',
-                            banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            banned_at TIMESTAMP DEFAULT NULL,
                             ban_duration INT DEFAULT -1);
             ''')
 
@@ -1277,12 +1277,60 @@ class Database:
 
             self.conn.commit()
 
+            cursor.execute('DELETE FROM validation_keys WHERE user_id = %s', (user_id,))
+
+            self.conn.commit()
+
             return True
         
         except Error as e:
 
             print(e)
             self.log_error('Cannot ban user')
+            return False
+
+    def unban_user(self, admin_id: int, vKey: str, user_id: int) -> bool:
+        """ unban a single user """
+        if not self.check_admin(admin_id, vKey):
+            self.log_error('Unauthorized')
+            return False
+        
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('UPDATE users SET status = \'active\', ban_duration = -1, banned_at = NULL WHERE id = %s', (user_id,))
+
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot unban user')
+            return False
+        
+    def update_email(self, admin_id: int, vKey: str, user_id: int, email: str) -> bool:
+        """ update a single user email """
+        if not self.check_admin(admin_id, vKey):
+            self.log_error('Unauthorized')
+            return False
+        
+        try:
+
+            cursor = self.conn.cursor()
+
+            cursor.execute('UPDATE users SET email = %s WHERE id = %s', (email, user_id))
+
+            self.conn.commit()
+
+            return True
+        
+        except Error as e:
+
+            print(e)
+            self.log_error('Cannot update email')
             return False
         
     def get_users(self, user_id: int, vKey: str) -> list:
@@ -1295,11 +1343,11 @@ class Database:
 
             cursor = self.conn.cursor()
 
-            cursor.execute('SELECT id, username, email, role, status FROM users WHERE role != \'admin\' AND ban_duration != 0')
+            cursor.execute('SELECT id, username, email, role, status, banned_at, ban_duration FROM users WHERE role != \'admin\' AND ban_duration != 0')
 
             rows = cursor.fetchall()
 
-            keys = ('id', 'username', 'email', 'role', 'status')
+            keys = ('id', 'username', 'email', 'role', 'status', 'banned_at', 'ban_duration')
 
             return [{key: value for key, value in zip(keys, row)} for row in rows]
 

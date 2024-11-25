@@ -46,6 +46,8 @@ const AdminPage: React.FC = () => {
         status: string;
         username: string;
         role: string;
+        ban_duration: number;
+        banned_at: string;
     }
 
     const [reports, setReports] = useState<Report[]>([]);
@@ -124,6 +126,7 @@ const AdminPage: React.FC = () => {
             body: JSON.stringify(data)
         }).then((response) => {
             if (response.ok) {
+                fetchUsers();
                 return;
             } else {
                 throw new Error('Failed to change email');
@@ -290,18 +293,95 @@ const AdminPage: React.FC = () => {
         const data = {
             admin_id: adminId.split('=')[1],
             vKey: vKey.split('=')[1],
-            user_id: userId
+            user_id: userId,
+            duration: duration
         };
+
+        fetch(API_BASE_URL + "/user/ban", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then((response) => {
+            if (response.ok) {
+                fetchUsers();
+                return;
+            } else {
+                throw new Error('Failed to ban user');
+            }
+        }).catch((error) => {
+            console.error("Error banning user:", error);
+            setError("Failed to ban user");
+            setTimeout(() => setError(''), 5000);
+        });
+
     }
 
     const unbanUser = (e : React.MouseEvent<HTMLDivElement>) => {
+
+        const userId = e.currentTarget.getAttribute('data-user-id');
+
+        if (!userId) {
+            return;
+        }
+
+        const previousStatus = e.currentTarget.getAttribute('data-previous-status');
+
+        if (previousStatus === 'active') {
+            setError('User is already active');
+            setTimeout(() => setError(''), 5000);
+            return;
+        }
+
+        const cookies = document.cookie.split(';');
+
+        if(!cookies){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const adminId = cookies.find(cookie => cookie.includes('user_id'));
+        const vKey = cookies.find(cookie => cookie.includes('vKey'));
+
+        if(!adminId || !vKey){
+            startTransition(() => { navigate('/login'); });
+            return;
+        }
+
+        const data = {
+            admin_id: adminId.split('=')[1],
+            vKey: vKey.split('=')[1],
+            user_id: userId
+        };
+
+        fetch(API_BASE_URL + "/user/unban", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then((response) => {
+            if (response.ok) {
+                fetchUsers();
+                return;
+            } else {
+                throw new Error('Failed to unban user');
+            }
+        }).catch((error) => {
+            console.error("Error unbanning user:", error);
+            setError("Failed to unban user");
+            setTimeout(() => setError(''), 5000);
+        });
+
     }
     
-    const generateUser = (email : string, status : string, id : number, username : string, role : string) => {
+    const generateUser = (email : string, status : string, id : number, username : string, role : string, ban_duration : number, ban_time : string) => {
         return (
             <div key={id} className={AdminPageStyles["action"]}>
                 <label>{username} (email: {email}):</label>
                 <div className={AdminPageStyles["action-value"]}>Status: {status}</div>
+                {status === 'banned' && <div className={AdminPageStyles["action-value"]}>Banned at: {ban_time}</div>}
                 <div className={AdminPageStyles["action-value"]}>Role: {role}</div>
                 <div className={AdminPageStyles["btns-container"]}>
                     <div className={AdminPageStyles["action-btn"]} data-user-id={id} onClick={changeUserEmail}></div>
@@ -584,7 +664,7 @@ const AdminPage: React.FC = () => {
                             <div className={AdminPageStyles["action-btn"]}></div>
                         </div>
                     </div>
-                    {users?.map((user) => generateUser(user.email, user.status, user.id, user.username, user.role))}
+                    {users?.map((user) => generateUser(user.email, user.status, user.id, user.username, user.role, user.ban_duration, user.banned_at))}
                 </div>
 
                 <div className={AdminPageStyles["actions-container"]}>

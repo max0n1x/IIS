@@ -209,16 +209,22 @@ async def demote_user(user : PromoteUser) -> bool:
     raise HTTPException(status_code=500, detail='Server error')
 
 @app.post('/api/v1.0/user/ban')
-async def ban_user(user : CookieUser) -> bool:
-    pass
+async def ban_user(user : BanUser) -> bool:
+    if db.ban_user(user.admin_id, user.vKey, user.user_id, user.duration):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
 
 @app.post('/api/v1.0/user/unban')
-async def unban_user(user : CookieUser) -> bool:
-    pass
+async def unban_user(user : PromoteUser) -> bool:
+    if db.unban_user(user.admin_id, user.vKey, user.user_id):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
 
-@app.post('/api/v1.0/admin/change_mail')
-async def mail_edit(user : CookieUser) -> bool:
-    pass
+@app.post('/api/v1.0/admin/change_email')
+async def mail_edit(user : MailChange) -> bool:
+    if db.update_email(user.admin_id, user.vKey, user.user_id, user.new_email):
+        return True
+    raise HTTPException(status_code=500, detail='Server error')
 
 @app.post('/api/v1.0/admin/get_users')
 async def get_users(user : CookieUser) -> list[dict]:

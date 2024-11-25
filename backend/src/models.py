@@ -117,11 +117,17 @@ class MailChange(BaseModel):
     user_id: int
     admin_id: int
     vKey: str
-    email: str
+    new_email: str
 
 class PromoteUser(BaseModel):
     user_id: int
     admin_id: int
     vKey: str
+
+class BanUser(BaseModel):
+    user_id: int
+    admin_id: int
+    vKey: str
+    duration: str
 
     

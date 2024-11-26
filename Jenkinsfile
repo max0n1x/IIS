@@ -8,7 +8,7 @@ pipeline {
         REMOTE_USER = 'jenkins-deploy'
         DEPLOY_PATH = '/home/jenkins-deploy/IIS'
         SSH_CREDENTIALS_ID = '228'
-        DEPLOY = false
+        DEPLOY = true
     }
 
     options {
@@ -79,7 +79,7 @@ pipeline {
                 }
             }
         }
-        
+
 
         stage('Verify Deployment') {
             when {

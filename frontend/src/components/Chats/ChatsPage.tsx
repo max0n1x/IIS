@@ -309,7 +309,7 @@ const ChatsPage: React.FC = () => {
 
     const setupWebSocket = useCallback(async() => {
 
-        messageSocket.current = new WebSocket(API_BASE_URL + "/new/chat");
+        messageSocket.current = new WebSocket(API_BASE_URL + "/chat");
 
         messageSocket.current.onopen = async() => {
             const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;
@@ -481,7 +481,7 @@ const ChatsPage: React.FC = () => {
 
     const setUpChatsWebSocket = useCallback(async() => {
 
-        chatsSocket.current = new WebSocket(API_BASE_URL + "/new/chats");
+        chatsSocket.current = new WebSocket(API_BASE_URL + "/chats");
 
         chatsSocket.current.onopen = async() => {
             const user_id = document.cookie.split(';').find(cookie => cookie.includes('user_id'))?.split('=')[1] || null;

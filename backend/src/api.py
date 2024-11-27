@@ -47,7 +47,7 @@ async def create_chat(chat: Chat) -> int:
 
 activeMessagesSockets, activeChatsSockets = [], []
 
-@app.websocket('/api/v1.0/new/chat')
+@app.websocket('/api/v1.0/chat')
 async def chat(websocket: WebSocket) -> None:
     try:
         await manager.connect(websocket)
@@ -70,7 +70,7 @@ async def chat(websocket: WebSocket) -> None:
     except WebSocketDisconnect:
         await manager.user_closed_session(websocket)
 
-@app.websocket('/api/v1.0/new/chats')
+@app.websocket('/api/v1.0/chats')
 async def user_chats(websocket: WebSocket) -> None:
     try:
         await manager.connect(websocket)

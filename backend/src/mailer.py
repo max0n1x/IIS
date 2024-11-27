@@ -1,5 +1,5 @@
-import smtpd
 import smtplib
+from smtplib import SMTPException
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -16,7 +16,7 @@ class Mailer:
         self.server.starttls()
         self.server.login(MAIL_USER, MAIL_PASSWORD)
 
-    def send_code(self, to : str, code : str) -> bool:
+    def send_code(self, to : str, code : str, patience : int = 5) -> bool:
         msg = MIMEMultipart()
         msg['From'] = formataddr((str(Header('Email verification', 'utf-8')), MAIL_USER))
         msg['To'] = to
@@ -37,11 +37,17 @@ class Mailer:
             self.server.send_message(msg)
             del msg
             return True
-        except Exception as e:
+        except SMTPException as e:
             print(e)
-            return False
+            if patience == 0:
+                return False
+            self.server.quit()
+            self.server = smtplib.SMTP(MAIL_HOST, MAIL_PORT)
+            self.server.starttls()
+            self.server.login(MAIL_USER, MAIL_PASSWORD)
+            self.send_code(to, code, patience - 1)
         
-    def send_password_reset(self, to : str, link : str) -> bool:
+    def send_password_reset(self, to : str, link : str, patience : int = 5) -> bool:
         msg = MIMEMultipart()
         msg['From'] = formataddr((str(Header('Password reset', 'utf-8')), MAIL_USER))
         msg['To'] = to
@@ -62,7 +68,13 @@ class Mailer:
             self.server.send_message(msg)
             del msg
             return True
-        except Exception as e:
+        except SMTPException as e:
             print(e)
-            return False
+            if patience == 0:
+                return False
+            self.server.quit()
+            self.server = smtplib.SMTP(MAIL_HOST, MAIL_PORT)
+            self.server.starttls()
+            self.server.login(MAIL_USER, MAIL_PASSWORD)
+            self.send_password_reset(to, link, patience - 1)
 

@@ -36,10 +36,8 @@ class Mailer:
             del msg
             return True
         except SMTPSenderRefused as e:
-            print(e)
             if patience == 0:
                 return False
-            self.server.quit()
             self.server = smtplib.SMTP(MAIL_HOST, MAIL_PORT)
             self.server.starttls()
             self.server.login(MAIL_USER, MAIL_PASSWORD)
@@ -67,10 +65,8 @@ class Mailer:
             del msg
             return True
         except SMTPSenderRefused as e:
-            print(e)
             if patience == 0:
                 return False
-            self.server.quit()
             self.server = smtplib.SMTP(MAIL_HOST, MAIL_PORT)
             self.server.starttls()
             self.server.login(MAIL_USER, MAIL_PASSWORD)

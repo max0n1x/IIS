@@ -1,10 +1,8 @@
 import smtplib
-from smtplib import SMTPException
+from smtplib import SMTPSenderRefused
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
-from email.mime.application import MIMEApplication
 from email.header import Header
 from email.utils import formataddr
 
@@ -37,7 +35,7 @@ class Mailer:
             self.server.send_message(msg)
             del msg
             return True
-        except SMTPException as e:
+        except SMTPSenderRefused as e:
             print(e)
             if patience == 0:
                 return False
@@ -68,7 +66,7 @@ class Mailer:
             self.server.send_message(msg)
             del msg
             return True
-        except SMTPException as e:
+        except SMTPSenderRefused as e:
             print(e)
             if patience == 0:
                 return False

@@ -42,7 +42,7 @@ class Mailer:
             self.server = smtplib.SMTP(MAIL_HOST, MAIL_PORT)
             self.server.starttls()
             self.server.login(MAIL_USER, MAIL_PASSWORD)
-            self.send_code(to, code, patience - 1)
+            return self.send_code(to, code, patience - 1)
         
     def send_password_reset(self, to : str, link : str, patience : int = 5) -> bool:
         msg = MIMEMultipart()
@@ -72,5 +72,5 @@ class Mailer:
             self.server = smtplib.SMTP(MAIL_HOST, MAIL_PORT)
             self.server.starttls()
             self.server.login(MAIL_USER, MAIL_PASSWORD)
-            self.send_password_reset(to, link, patience - 1)
+            return self.send_password_reset(to, link, patience - 1)
 

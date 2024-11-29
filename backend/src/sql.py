@@ -189,7 +189,8 @@ class Database:
             self.conn.commit()
 
         except Error as e:
-
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             print(e)
 
     def check_admin(self, user_id : int, vKey : str) -> bool:
@@ -212,6 +213,8 @@ class Database:
                     
             print(e)
             self.log_error('Cannot check admin')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def check_moderator(self, user_id : int, vKey : str) -> bool:
@@ -234,6 +237,8 @@ class Database:
                     
             print(e)
             self.log_error('Cannot check moderator')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
 
     def insert_validation_key(self, user_id: int, vKey: str) -> bool:
@@ -254,6 +259,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot insert validation key')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def check_validation_key(self, user_id: int, vKey: str) -> bool:
@@ -272,6 +279,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot check validation key')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def logout_user(self, user_id: int, vKey: str) -> bool:
@@ -290,6 +299,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot logout user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
 
         
@@ -309,6 +320,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get user id by validation key')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return -1
 
     def insert_item(self, **item) -> bool:
@@ -335,6 +348,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot insert item')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
 
     def get_items(self, category_id: str) -> list:
@@ -354,6 +369,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get items')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return []
 
     def get_item(self, item_id: int) -> dict:
@@ -373,6 +390,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get item')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return {}
 
     def delete_item(self, item_id: int, author_id : int, vKey : str) -> bool:
@@ -420,6 +439,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot delete item')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
 
     def update_item(self, **item) -> bool:
@@ -458,6 +479,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot update item')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def request_code(self, **user) -> int:
@@ -503,6 +526,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot register user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return -3
 
     def verify_user(self, **user) -> int:
@@ -534,6 +559,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot register user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return -3
         
     def resend_code(self, email: str) -> bool:
@@ -569,6 +596,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot resend code')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def forgot_password(self, email: str, origin: str) -> bool:
@@ -613,6 +642,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot send reset link')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
 
     def check_reset_token(self, token: str) -> dict:
@@ -635,6 +666,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot check reset token')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return {}
         
     def reset_password(self, **password) -> bool:
@@ -666,6 +699,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot reset password')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def login_user(self, **user) -> int:
@@ -706,6 +741,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot login user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return -3, ''
         
     def get_user_items_bd(self, user_id: int, vKey: str) -> list:
@@ -731,6 +768,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get user items')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return None
         
     def get_user(self, user_id : int, vKey : str) -> dict:
@@ -764,6 +803,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return {}
         
     def get_user_by_id(self, user_id: int) -> dict:
@@ -784,6 +825,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get user by id')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return {} 
         
     def update_user(self, **user) -> bool:
@@ -808,6 +851,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot update user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def delete_user(self, user_id : int, vKey : str) -> bool:
@@ -843,6 +888,8 @@ class Database:
                 
             print(e)
             self.log_error('Cannot delete user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
     
     def create_chat(self, **chat) -> int:
@@ -875,6 +922,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot create chat')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return -1
         
     def get_chat(self, chat_id: int, user_id: int, vKey: str) -> dict:
@@ -912,6 +961,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get chat')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return {}
         
     def get_chats(self, user_id: int, vKey: str) -> list:
@@ -937,6 +988,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get chats')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return []
         
     def delete_chat(self, chat_id: int, user_id: int, vKey: str) -> bool:
@@ -975,6 +1028,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot delete chat')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def create_message(self, chat_id: int, message: str, date : str, author_id: int, vKey: str) -> bool:
@@ -1003,6 +1058,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot create message')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
     
     def get_messages(self, chat_id: int, user_id: int, vKey: str) -> list:
@@ -1024,6 +1081,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get messages')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return []
         
     def delete_message(self, message_id: int, user_id: int, vKey: str) -> bool:
@@ -1058,6 +1117,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot delete message')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def update_message(self, message_id : int, message : str, author_id : int, vKey : str) -> bool:
@@ -1097,6 +1158,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot update message')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
 
     def unauthorized_user(self) -> int:
@@ -1115,6 +1178,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot add unauthorized user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return -1
         
     def get_stats(self, user_id: int, vKey: str) -> dict:
@@ -1149,6 +1214,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot fetch stats')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return {}
         
     def report_create(self, **report) -> bool:
@@ -1167,6 +1234,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot create report')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def get_report(self, report_id: int, user_id: int, vKey: str) -> dict:
@@ -1193,6 +1262,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get report')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return {}
 
     def get_reports(self, user_id: int, vKey: str) -> list:
@@ -1217,6 +1288,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get reports')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return -1
         
     def report_resolve(self, report_id: int, user_id: int, vKey: str, action: str, ban_duration: int) -> bool:
@@ -1278,6 +1351,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot resolve report')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def ban_user(self, admin_id: int, vKey: str, user_id: int, duration: int) -> bool:
@@ -1326,6 +1401,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot unban user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def update_email(self, admin_id: int, vKey: str, user_id: int, email: str) -> bool:
@@ -1348,6 +1425,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot update email')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def get_users(self, user_id: int, vKey: str) -> list:
@@ -1372,6 +1451,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot get users')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return []
         
     def promote_user(self, user_id: int, vKey: str, admin_id: int) -> bool:
@@ -1394,6 +1475,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot promote user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def demote_user(self, user_id: int, vKey: str, admin_id: int) -> bool:
@@ -1416,6 +1499,8 @@ class Database:
 
             print(e)
             self.log_error('Cannot demote user')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
         
     def item_action(self, item_id: int, user_id: int, vKey: str, action: str) -> bool:
@@ -1470,6 +1555,8 @@ class Database:
                     
             print(e)
             self.log_error('Cannot perform action')
+            if e == 'MySQL Connection not available.':
+                self.conn.reconnect()
             return False
 
     def __del__(self) -> None:

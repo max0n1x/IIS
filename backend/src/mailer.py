@@ -36,6 +36,7 @@ class Mailer:
             del msg
             return True
         except SMTPSenderRefused as e:
+            print(e)
             if patience == 0:
                 return False
             self.server = smtplib.SMTP(MAIL_HOST, MAIL_PORT)
@@ -65,6 +66,7 @@ class Mailer:
             del msg
             return True
         except SMTPSenderRefused as e:
+            print(e)
             if patience == 0:
                 return False
             self.server = smtplib.SMTP(MAIL_HOST, MAIL_PORT)

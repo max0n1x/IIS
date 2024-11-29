@@ -548,6 +548,9 @@ class Database:
             if row:
                 cursor.execute('DELETE FROM codes WHERE email = %s', (email,))
 
+            if not row:
+                return False
+
             hasher = Hasher()
             code = hasher.generate_code()
 

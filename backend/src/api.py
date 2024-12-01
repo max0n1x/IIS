@@ -23,7 +23,7 @@ app = FastAPI()
 db = Database()
 manager = SocketsManager()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 app.add_middleware(
     CORSMiddleware,

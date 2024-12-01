@@ -87,6 +87,7 @@ pipeline {
             }
 
             steps {
+                sleep(time: 1, unit: 'MINUTES')
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     script {
                         def check = sh(

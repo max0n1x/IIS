@@ -28,15 +28,12 @@ class Database:
                 user=DATABASE_USER,
                 password=DATABASE_PASSWORD,
                 database='iis_prod',
-                autocommit=True,
-                reconnect=True
+                autocommit=True
             )
 
             if not self.conn:
                 print('Cannot connect to the database')
                 exit(1)
-
-            self.conn.autocommit = True
 
             cursor = self.conn.cursor()
 

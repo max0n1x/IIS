@@ -146,7 +146,7 @@ const ResetPasswordPage: React.FC = () => {
             <label htmlFor="password" className={ResetPasswordStyles['password-label']}>New password:</label>
             <input type="password" name="password" className={ResetPasswordStyles['password-input']}
                     onChange={handlePasswordStrength} />
-			<div>?</div>
+			<div className={ResetPasswordStyles['password-strength']}>Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number</div>
 
             <label htmlFor="confirm-password" className={ResetPasswordStyles['password-label1']}>Confirm password:</label>
             <input type="password" name="confirm-password" className={ResetPasswordStyles['password-input1']}

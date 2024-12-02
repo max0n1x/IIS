@@ -24,10 +24,10 @@ const RegisterPage: React.FC = () => {
     const headerRef = useRef<HTMLDivElement | null>(null);
     const navigate = useNavigate();
 
-    const validateEmail = (email : string) => {
-		const re = /\S+@\S+\.\S+/;
-		return re.test(email);
-    };
+	const validateEmail = (email : string) => {
+			const re = /\S+@\S+\.\S+/;
+			return re.test(email);
+	};
 
 	const checkPassword = (password : string) => {
 		const re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
@@ -151,6 +151,7 @@ const RegisterPage: React.FC = () => {
             <label htmlFor="password" className={RegisterPageStyle['password-label']}>Password<span style={{ color: "red" }}>*</span></label>
             <input type="password" name="password" className={RegisterPageStyle['password-input']}
                     onChange={passwordStrength} />
+			<div className={RegisterPageStyle['password-strength']}>Password must contain at least 8 characters, including uppercase, lowercase letters, special characters and numbers</div>
 
             <label htmlFor="confirm-password" className={RegisterPageStyle['password-label1']}>Confirm password<span style={{ color: "red" }}>*</span></label>
             <input type="password" name="confirm-password" className={RegisterPageStyle['password-input1']}

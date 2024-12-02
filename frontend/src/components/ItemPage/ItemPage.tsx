@@ -311,7 +311,7 @@ const ItemPage: React.FC = () => {
 
         loggedInCheck();
 
-        if (adminLoggedIn) {
+        if (adminLoggedIn || isModerator) {
 
             const cookies = document.cookie.split(';');
 

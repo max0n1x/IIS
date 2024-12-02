@@ -1204,7 +1204,7 @@ class Database:
         
     def get_report(self, report_id: int, user_id: int, vKey: str) -> dict:
         """ get a single report """
-        if not self.check_admin(user_id, vKey):
+        if not self.check_admin(user_id, vKey) and not self.check_moderator(user_id, vKey):
             self.log_error('Unauthorized')
             raise HTTPException(status_code=401, detail='Unauthorized')
         

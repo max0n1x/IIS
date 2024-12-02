@@ -188,6 +188,18 @@ const UserPage: React.FC = () => {
     
     const handleDoneClick = async () => {
 
+        if (!validateEmail(UserData.email)) {
+            setError("Invalid email format");
+            setTimeout(() => { setError(''); }, 2000);
+            return;
+        }
+
+        if (!validatePhoneNumber(UserData.phone)) {
+            setError("Invalid phone number format");
+            setTimeout(() => { setError(''); }, 2000);
+            return;
+        }
+
         const cookies = document.cookie.split(';');
 
         if(!cookies){
